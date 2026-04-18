@@ -6,7 +6,7 @@ using {
     masterdata.Materials,
     masterdata.Warehouses
 } from './master-data';
-
+using { types } from './types';
 
 namespace inventory;
 
@@ -19,12 +19,12 @@ entity Stocks : cuid, managed {
 };
 
 entity Moviments : cuid, managed {
-    type                 : String(20); //mudar tipo para valores fixos: ENTRADA, SAÍDA
+    type                 : types.MovimentTypes;
     material             : Association to one Materials;
     quantity             : Integer;
     originWarehouse      : Association to one Warehouses;
     destinationWarehouse : Association to one Warehouses;
-    status               : String(20); //mudar tipo para valores fixos: REJEITADO, PENDENTE, APROVADO, CONCLUÍDO
+    status               : types.MovimentStatus;
     observation          : String;
 }
 
