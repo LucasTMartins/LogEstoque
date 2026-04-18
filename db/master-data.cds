@@ -39,6 +39,7 @@ entity Addresses : cuid, managed {
     number      : String(10);
     district    : String(50);
     town        : String(50);
+    state       : String(50);
     country     : Country;
     zipCode     : String(9);
     observation : String(100);
