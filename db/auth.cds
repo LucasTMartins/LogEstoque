@@ -11,10 +11,16 @@ entity Users : cuid, managed {
     lastName    : String(100);
     password    : String(255);
     active      : Boolean;
-    permissions : Association to many Permissions;
+    permissions : Composition of many UserPermissions
+                      on permissions.user = $self;
 }
 
 entity Permissions : cuid, managed {
     name        : String(50);
     description : String;
+}
+
+entity UserPermissions : cuid, managed {
+    user       : Association to one Users;
+    permission : Association to one Permissions;
 }
