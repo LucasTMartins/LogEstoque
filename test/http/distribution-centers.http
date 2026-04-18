@@ -1,0 +1,20 @@
+@url=http://localhost:4004/odata/v4/main
+
+GET {{url}}/DistributionCenters
+Content-Type: application/json
+
+###
+GET {{url}}/DistributionCenters(11159450-31bb-42d7-adab-8329f99b9478)
+Content-Type: application/json
+
+###
+GET {{url}}/DistributionCenters(11159458-232b-4600-b758-bff2c6c5f21e)?$expand=warehouses($expand=stock$filter=code eq 'code-18609024')
+Content-Type: application/json
+
+###
+GET {{url}}/DistributionCenters?$expand=warehouses
+Content-Type: application/json
+
+###
+GET {{url}}/DistributionCenters?$expand=warehouses($expand=stock)
+Content-Type: application/json
