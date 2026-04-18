@@ -6,7 +6,7 @@ using {
 namespace auth;
 
 entity Users : cuid, managed {
-    username    : String(12);
+    username    : String(12) @assert.unique;
     firstName   : String(20);
     lastName    : String(100);
     password    : String(255);
@@ -25,4 +25,4 @@ entity UserPermissions : cuid, managed {
     permission : Association to one Permissions;
 } annotate UserPermissions with @assert.unique: {
     unique_user_permission: [user, permission]
-}
+};
