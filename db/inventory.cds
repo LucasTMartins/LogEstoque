@@ -14,7 +14,9 @@ entity Stocks : cuid, managed {
     material  : Association to one Materials;
     warehouse : Association to one Warehouses;
     quantity  : Integer;
-}
+} annotate Stocks with @assert.unique: {
+    unique_material_warehouse: [material, warehouse]
+};
 
 entity Moviments : cuid, managed {
     type                 : String(20); //mudar tipo para valores fixos: ENTRADA, SAÍDA
