@@ -1,5 +1,5 @@
 ID,username,firstName,lastName,password,active,createdAt,createdBy,modifiedAt,modifiedBy
-3478225f-e061-465d-9b3c-11cd75cd8bb7,name-3478225,firstName-3478225,lastName-3478225,password-3478225,false,2012-05-29T02:00:00.000Z,createdBy.22jtd@example.com,2011-02-12T02:00:00.000Z,modifiedBy.22jtd@example.net
+3478225f-e061-465d-9b3c-11cd75cd8bb7,LMOLIVEIRA,Lucas,Oliveira,password-3478225,true,2012-05-29T02:00:00.000Z,createdBy.22jtd@example.com,2011-02-12T02:00:00.000Z,modifiedBy.22jtd@example.net
 34782268-4012-4e3f-a219-7a8be2fd7cbb,name-3478226,firstName-3478226,lastName-3478226,password-3478226,true,2008-07-05T02:00:00.000Z,createdBy.22jte@example.org,2011-02-05T02:00:00.000Z,modifiedBy.22jte@example.net
 3478227c-a106-46c7-94e4-23fedb2f8f2b,name-3478227,firstName-3478227,lastName-3478227,password-3478227,false,2012-08-29T02:00:00.000Z,createdBy.22jtf@example.net,2008-04-21T02:00:00.000Z,modifiedBy.22jtf@example.net
 3478228a-ddeb-44b4-bc6c-293b914b248a,name-3478228,firstName-3478228,lastName-3478228,password-3478228,true,2018-07-25T02:00:00.000Z,createdBy.22jtg@example.com,2004-03-26T02:00:00.000Z,modifiedBy.22jtg@example.com

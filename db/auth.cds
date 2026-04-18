@@ -23,4 +23,6 @@ entity Permissions : cuid, managed {
 entity UserPermissions : cuid, managed {
     user       : Association to one Users;
     permission : Association to one Permissions;
+} annotate UserPermissions with @assert.unique: {
+    unique_user_permission: [user, permission]
 }
