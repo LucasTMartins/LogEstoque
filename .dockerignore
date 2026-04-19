@@ -1,0 +1,20 @@
+node_modules
+.git
+.gitignore
+*.md
+.env
+.env.*
+
+# Artefatos de desenvolvimento CDS
+app/
+db/sqlite.db
+db/*.db
+
+# Logs e cache
+npm-debug.log*
+.npm
+.cache
+
+# IDE
+.vscode/
+.idea/

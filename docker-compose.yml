@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  logestoque:
+    build: .
+    container_name: logestoque
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+    volumes:
+      - logestoque-data:/app/gen/srv/db
+
+volumes:
+  logestoque-data:

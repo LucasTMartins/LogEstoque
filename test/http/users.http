@@ -1,0 +1,20 @@
+@url=http://localhost:4004/odata/v4/main
+
+GET {{url}}/Users
+Content-Type: application/json
+
+###
+GET {{url}}/Users?$expand=permissions
+Content-Type: application/json
+
+###
+GET {{url}}/Users(3478225f-e061-465d-9b3c-11cd75cd8bb7)?$expand=permissions
+Content-Type: application/json
+
+###
+POST {{url}}/Users(3478225f-e061-465d-9b3c-11cd75cd8bb7)/permissions
+Content-Type: application/json
+
+{
+    "permission_ID": "84809366-7bab-4f62-8dde-2c1422d5a3de"
+}
