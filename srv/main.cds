@@ -1,6 +1,4 @@
-using {auth} from '../db/auth';
-using {inventory} from '../db/inventory';
-using {masterdata} from '../db/master-data';
+using {db.auth, db.inventory, db.masterdata} from '../db/index.cds';
 
 
 service MainService {

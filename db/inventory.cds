@@ -2,28 +2,28 @@ using {
     cuid,
     managed
 } from '@sap/cds/common';
-using {
-    masterdata.Materials,
-    masterdata.Warehouses
-} from './master-data';
-using { types } from './types';
+using {db.masterdata} from './master-data';
+using {db.types} from './types';
 
-namespace inventory;
+namespace db.inventory;
 
 entity Stocks : cuid, managed {
-    material  : Association to one Materials;
-    warehouse : Association to one Warehouses;
+    material  : Association to one masterdata.Materials;
+    warehouse : Association to one masterdata.Warehouses;
     quantity  : Integer;
-} annotate Stocks with @assert.unique: {
-    unique_material_warehouse: [material, warehouse]
-};
+}
+
+annotate Stocks with @assert.unique: {unique_material_warehouse: [
+    material,
+    warehouse
+]};
 
 entity Moviments : cuid, managed {
     type                 : types.MovimentTypes;
-    material             : Association to one Materials;
+    material             : Association to one masterdata.Materials;
     quantity             : Integer;
-    originWarehouse      : Association to one Warehouses;
-    destinationWarehouse : Association to one Warehouses;
+    originWarehouse      : Association to one masterdata.Warehouses;
+    destinationWarehouse : Association to one masterdata.Warehouses;
     status               : types.MovimentStatus;
     observation          : String;
 }

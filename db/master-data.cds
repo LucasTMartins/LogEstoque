@@ -3,10 +3,10 @@ using {
     managed
 } from '@sap/cds/common';
 using {Country} from '@sap/cds/common';
-using {inventory.Stocks} from './inventory';
+using {db.inventory} from './inventory';
 
 
-namespace masterdata;
+namespace db.masterdata;
 
 entity Materials : cuid, managed {
     code        : String(50) @assert.unique;
@@ -29,7 +29,7 @@ entity Warehouses : cuid, managed {
     name               : String(100);
     capacity           : Integer;
     distributionCenter : Association to one DistributionCenters;
-    stock              : Composition of many Stocks
+    stock              : Composition of many inventory.Stocks
                              on stock.warehouse = $self;
     active             : Boolean;
 }

@@ -3,7 +3,7 @@ using {
     managed
 } from '@sap/cds/common';
 
-namespace auth;
+namespace db.auth;
 
 entity Users : cuid, managed {
     username    : String(12) @assert.unique;

@@ -1,4 +1,4 @@
-namespace types;
+namespace db.types;
 
 type MovimentTypes  : String(1) enum {
     @title: 'Entrada'
