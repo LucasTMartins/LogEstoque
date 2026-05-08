@@ -1,3 +1,0 @@
-ID,material_ID,warehouse_ID,quantity,createdAt,createdBy,modifiedAt,modifiedBy
-13659522-d237-4f45-9c00-1ddad56f998c,3091952e-754d-4a0a-a1e6-7d34b8a4d93b,74314894-c4db-48bb-8152-cf48bad1ce38,97,2015-10-09T02:00:00.000Z,createdBy.84rr6@example.net,2005-01-04T02:00:00.000Z,modifiedBy.84rr6@example.net
-13659523-36b1-4de0-bf7f-bc9a0190af88,30205801-93a9-4202-a5de-781cec777382,74314894-c4db-48bb-8152-cf48bad1ce38,34,2015-03-13T02:00:00.000Z,createdBy.84rr7@example.net,2015-08-15T02:00:00.000Z,modifiedBy.84rr7@example.net
