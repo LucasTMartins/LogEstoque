@@ -29,8 +29,8 @@ entity Warehouses : cuid, managed {
     name               : String(100);
     capacity           : Integer;
     distributionCenter : Association to one DistributionCenters;
-    stock              : Composition of many inventory.Stocks
-                             on stock.warehouse = $self;
+    stocks             : Composition of many inventory.Stocks
+                             on stocks.warehouse = $self;
     active             : Boolean;
 }
 
