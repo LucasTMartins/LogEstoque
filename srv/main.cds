@@ -1,11 +1,5 @@
 using {
-    cuid,
-    managed
-} from '@sap/cds/common';
-
-using {
-    db.inventory,
-    db.types
+    db.inventory
 } from '../db/index.cds';
 
 service MainService {
@@ -27,22 +21,33 @@ service MainService {
                 destinationWarehouse.name as destinationWarehouseName,
                 status,
                 observation,
-        // composition child to MovimentDetail on child.movimentID = $self.ID
+                details : Composition of many MovimentDetail
+                              on details.moviment = $self
         };
 
-    entity MovimentDetail : cuid, managed {
-        movimentID          : UUID;
-        moviment            : Association to one inventory.Moviments;
-        materialCode        : String(50);
-        materialDescription : String;
-        materialUnitMeasure : String(10);
-        warehouseCode       : String(50);
-        warehouseName       : String(100);
-        type                : types.MovimentTypes;
-        quantity            : Integer;
-        status              : types.MovimentStatus;
-        observation         : String;
-        stockHistory        : Association to many inventory.StockHistory
-                                  on stockHistory.moviment = $self.moviment;
-    }
+    entity MovimentDetail      as
+        projection on inventory.StockHistory {
+            key ID,
+                createdAt,
+                createdBy,
+                modifiedAt,
+                modifiedBy,
+
+                moviment,
+
+                stock.material.code        as materialCode,
+                stock.material.description as materialDescription,
+                stock.material.unitMeasure as materialUnitMeasure,
+
+                stock.warehouse.code       as warehouseCode,
+                stock.warehouse.name       as warehouseName,
+
+                lastQuantity,
+                currentQuantity,
+
+                moviment.type              as type,
+                moviment.quantity          as movimentQuantity,
+                moviment.status            as status,
+                moviment.observation       as observation
+        };
 }
