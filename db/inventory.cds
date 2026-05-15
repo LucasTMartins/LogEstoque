@@ -2,35 +2,47 @@ using {
     cuid,
     managed
 } from '@sap/cds/common';
-using {
-    masterdata.Materials,
-    masterdata.Warehouses
-} from './master-data';
-using { types } from './types';
+using {db.masterdata} from './master-data';
+using {db.types} from './types';
 
-namespace inventory;
+namespace db.inventory;
 
 entity Stocks : cuid, managed {
-    material  : Association to one Materials;
-    warehouse : Association to one Warehouses;
-    quantity  : Integer;
-} annotate Stocks with @assert.unique: {
-    unique_material_warehouse: [material, warehouse]
-};
+    material  : Association to one masterdata.Materials   @mandatory  @assert.target;
+    warehouse : Association to one masterdata.Warehouses  @mandatory  @assert.target;
+    quantity  : Integer                                   @mandatory  @assert.range: [
+        0,
+        _
+    ];
+}
+
+annotate Stocks with @assert.unique: {unique_material_warehouse: [
+    material,
+    warehouse
+]};
 
 entity Moviments : cuid, managed {
-    type                 : types.MovimentTypes;
-    material             : Association to one Materials;
-    quantity             : Integer;
-    originWarehouse      : Association to one Warehouses;
-    destinationWarehouse : Association to one Warehouses;
-    status               : types.MovimentStatus;
-    observation          : String;
+    type                 : types.MovimentTypes                      @mandatory;
+    material             : Association to one masterdata.Materials  @mandatory  @assert.target;
+    quantity             : Integer                                  @mandatory  @assert.range: [
+        1,
+        _
+    ];
+    originWarehouse      : Association to one masterdata.Warehouses @assert.target;
+    destinationWarehouse : Association to one masterdata.Warehouses @assert.target;
+    status               : types.MovimentStatus                     @mandatory;
+    observation          : String(500);
 }
 
 entity StockHistory : cuid, managed {
-    stock           : Association to one Stocks;
-    lastQuantity    : Integer;
-    currentQuantity : Integer;
-    moviment        : Association to one Moviments;
+    stock           : Association to one Stocks     @mandatory  @assert.target;
+    lastQuantity    : Integer                       @mandatory  @assert.range: [
+        0,
+        _
+    ];
+    currentQuantity : Integer                       @mandatory  @assert.range: [
+        0,
+        _
+    ];
+    moviment        : Association to one Moviments  @mandatory  @assert.target;
 }

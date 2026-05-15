@@ -1,0 +1,32 @@
+{
+  "generationParameters": {
+    "generationDate": "Thu May 14 2026 19:04:26 GMT-0300 (Horário Padrão de Brasília)",
+    "generatorPlatform": "Visual Studio Code",
+    "serviceType": "Local CAP",
+    "metadataFilename": "",
+    "serviceUrl": "http://localhost:4004/odata/v4/main/",
+    "appName": "logestoque",
+    "appTitle": "LogEstoque",
+    "appDescription": "Frontend Log Estoque",
+    "appNamespace": "br.dev.imlucas",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.148.0",
+    "enableEslint": true,
+    "enableTypeScript": true,
+    "showMockDataInfo": false,
+    "generatorVersion": "1.23.0",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "MovimentByWarehouse"
+      },
+      {
+        "type": "Navigation Entity",
+        "value": "details"
+      }
+    ],
+    "launchText": "To launch the generated app, start your CAP project:  and navigate to the following location in your browser:\n\nhttp://localhost:4004/br.dev.imlucas.logestoque/index.html"
+  }
+}

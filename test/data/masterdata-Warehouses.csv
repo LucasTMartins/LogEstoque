@@ -1,3 +1,0 @@
-ID,code,name,capacity,distributionCenter_ID,active,createdAt,createdBy,modifiedAt,modifiedBy
-18609023-dc49-4447-b46d-0d4b91e9dbf0,code-18609023,name-18609023,42,11159458-232b-4600-b758-bff2c6c5f21e,false,2004-09-18T02:00:00.000Z,createdBy.b2utb@example.com,2004-03-01T02:00:00.000Z,modifiedBy.b2utb@example.com
-18609024-aaa6-42ae-917d-8d327bfa785b,code-18609024,name-18609024,62,11159458-232b-4600-b758-bff2c6c5f21e,true,2007-12-25T02:00:00.000Z,createdBy.b2utc@example.net,2006-04-18T02:00:00.000Z,modifiedBy.b2utc@example.net

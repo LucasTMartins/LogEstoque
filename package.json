@@ -7,11 +7,22 @@
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
-    "@sap/cds-dk": "^9.8.4"
+    "@sap/cds-dk": "^9.8.4",
+    "cds-plugin-ui5": "^0.13.0",
+    "@cap-js/cds-test": "^0"
   },
   "scripts": {
     "start": "cds-serve",
-    "dev": "cds watch"
+    "dev": "cds watch",
+    "watch-logestoque": "cds watch --open br.dev.imlucas.logestoque/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "test": "node --test"
   },
-  "private": true
+  "private": true,
+  "workspaces": [
+    "app/*"
+  ],
+  "sapux": [
+    "app/logestoque",
+    "app/logestoque"
+  ]
 }

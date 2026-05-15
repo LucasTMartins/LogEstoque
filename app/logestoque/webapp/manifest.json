@@ -1,0 +1,169 @@
+{
+  "_version": "1.84.0",
+  "sap.app": {
+    "id": "br.dev.imlucas.logestoque",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:lrop",
+      "version": "1.23.0",
+      "toolsId": "341d4ab9-ee90-4cdf-9bdb-2b70d47399bb"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/main/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.01"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.148.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "br.dev.imlucas.logestoque.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "MovimentByWarehouseList",
+          "target": "MovimentByWarehouseList"
+        },
+        {
+          "pattern": "MovimentByWarehouse({key}):?query:",
+          "name": "MovimentByWarehouseObjectPage",
+          "target": "MovimentByWarehouseObjectPage"
+        },
+        {
+          "pattern": "MovimentByWarehouse({key})/details({key2}):?query:",
+          "name": "MovimentDetailObjectPage",
+          "target": "MovimentDetailObjectPage"
+        }
+      ],
+      "targets": {
+        "MovimentByWarehouseList": {
+          "type": "Component",
+          "id": "MovimentByWarehouseList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/MovimentByWarehouse",
+              "variantManagement": "Page",
+              "navigation": {
+                "MovimentByWarehouse": {
+                  "detail": {
+                    "route": "MovimentByWarehouseObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "MovimentByWarehouseObjectPage": {
+          "type": "Component",
+          "id": "MovimentByWarehouseObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/MovimentByWarehouse",
+              "navigation": {
+                "details": {
+                  "detail": {
+                    "route": "MovimentDetailObjectPage"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "MovimentDetailObjectPage": {
+          "type": "Component",
+          "id": "MovimentDetailObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/MovimentByWarehouse/details"
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  },
+  "sap.fe": {
+    "app": {
+      "enableLazyLoading": true
+    }
+  }
+}
