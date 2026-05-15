@@ -13,7 +13,7 @@
     "sourceTemplate": {
       "id": "@sap/generator-fiori:lrop",
       "version": "1.23.0",
-      "toolsId": "d4c0e856-a768-4293-8d09-8005da165e5e"
+      "toolsId": "341d4ab9-ee90-4cdf-9bdb-2b70d47399bb"
     },
     "dataSources": {
       "mainService": {
@@ -45,7 +45,7 @@
   "sap.ui5": {
     "flexEnabled": true,
     "dependencies": {
-      "minUI5Version": "1.147.2",
+      "minUI5Version": "1.148.0",
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
@@ -92,6 +92,11 @@
           "pattern": "MovimentByWarehouse({key}):?query:",
           "name": "MovimentByWarehouseObjectPage",
           "target": "MovimentByWarehouseObjectPage"
+        },
+        {
+          "pattern": "MovimentByWarehouse({key})/details({key2}):?query:",
+          "name": "MovimentDetailObjectPage",
+          "target": "MovimentDetailObjectPage"
         }
       ],
       "targets": {
@@ -127,7 +132,25 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/MovimentByWarehouse"
+              "contextPath": "/MovimentByWarehouse",
+              "navigation": {
+                "details": {
+                  "detail": {
+                    "route": "MovimentDetailObjectPage"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "MovimentDetailObjectPage": {
+          "type": "Component",
+          "id": "MovimentDetailObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/MovimentByWarehouse/details"
             }
           }
         }

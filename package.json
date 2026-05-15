@@ -22,6 +22,7 @@
     "app/*"
   ],
   "sapux": [
+    "app/logestoque",
     "app/logestoque"
   ]
 }

@@ -25,6 +25,7 @@ sap.ui.require(
     "br/dev/imlucas/logestoque/test/integration/FirstJourney",
     "br/dev/imlucas/logestoque/test/integration/MovimentByWarehouseListJourney",
     "br/dev/imlucas/logestoque/test/integration/MovimentByWarehouseObjectPageJourney",
+    "br/dev/imlucas/logestoque/test/integration/MovimentDetailObjectPageJourney",
 ], function (QUnit) {
     "use strict";
     QUnit.start();

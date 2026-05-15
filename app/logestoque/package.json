@@ -1,7 +1,7 @@
 {
   "name": "logestoque",
   "version": "0.0.1",
-  "description": "Projeto LogEstoque",
+  "description": "Frontend Log Estoque",
   "keywords": [
     "ui5",
     "openui5",
@@ -14,7 +14,7 @@
     "@sap/ux-ui5-tooling": "1",
     "@sap-ux/eslint-plugin-fiori-tools": "^9.0.0",
     "eslint": "^9",
-    "@sapui5/types": "~1.147.0",
+    "@sapui5/types": "~1.148.0",
     "ui5-tooling-transpile": "^3.10.0",
     "typescript": "^5.9.3"
   },

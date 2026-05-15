@@ -1,7 +1,7 @@
 ## Application Details
 |               |
 | ------------- |
-|**Generation Date and Time**<br>Fri May 08 2026 18:18:41 GMT-0300 (Horário Padrão de Brasília)|
+|**Generation Date and Time**<br>Thu May 14 2026 19:04:26 GMT-0300 (Horário Padrão de Brasília)|
 |**App Generator**<br>SAP Fiori Application Generator|
 |**App Generator Version**<br>1.23.0|
 |**Generation Platform**<br>Visual Studio Code|
@@ -12,14 +12,15 @@
 |**Application Title**<br>LogEstoque|
 |**Namespace**<br>br.dev.imlucas|
 |**UI5 Theme**<br>sap_horizon|
-|**UI5 Version**<br>1.147.2|
+|**UI5 Version**<br>1.148.0|
 |**Enable TypeScript**<br>True|
 |**Add Eslint configuration**<br>True, see https://www.npmjs.com/package/@sap-ux/eslint-plugin-fiori-tools#rules for the eslint rules.|
 |**Main Entity**<br>MovimentByWarehouse|
+|**Navigation Entity**<br>details|
 
 ## logestoque
 
-Projeto LogEstoque
+Frontend Log Estoque
 
 ### Starting the generated app
 
