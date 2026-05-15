@@ -6,7 +6,6 @@ node_modules
 .env.*
 
 # Artefatos de desenvolvimento CDS
-app/
 db/sqlite.db
 db/*.db
 
