@@ -15,6 +15,7 @@ mta_archives/
 
 # Other
 .DS_Store
+.env
 
 # @cap-js/cds-typer
 @cds-models
