@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>LogEstoque - Login</title>
+    <script id="sap-ui-bootstrap"
+            src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
+            data-sap-ui-theme="sap_fiori_3"
+            data-sap-ui-libs="sap.m"
+            data-sap-ui-bindingSyntax="complex"
+            data-sap-ui-compatVersion="edge"
+            data-sap-ui-preload="async"
+            data-sap-ui-resourceroots='{"login": "./"}'
+    ></script>
+    <script>
+        // Define the login controller
+        sap.ui.controller("login.Login", {
+            onLoginPress: function () {
+                var oView = this.getView();
+                var sUsername = oView.byId("usernameInput").getValue();
+                var sPassword = oView.byId("passwordInput").getValue();
+                var sError = oView.byId("errorText");
+
+                fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: sUsername, password: sPassword })
+                })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return response.json().then(function (err) { throw new Error(err.error); });
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    sessionStorage.setItem('token', data.token);
+                    window.location.href = '/';
+                })
+                .catch(function (err) {
+                    sError.setText(err.message);
+                    sError.setVisible(true);
+                });
+            }
+        });
+
+        // Define the login view (JS view, no XML file needed)
+        sap.ui.jsview("login.Login", {
+            getControllerName: function () {
+                return "login.Login"; }(),
+            createContent: function (oController) {
+                var oPage = new sap.m.Page({
+                    title: "Login - LogEstoque",
+                    content: [
+                        new sap.m.Input({ id: "usernameInput", placeholder: "Usuário", width: "300px" }),
+                        new sap.m.Input({ id: "passwordInput", type: "Password", placeholder: "Senha", width: "300px" }),
+                        new sap.m.Button({ text: "Entrar", press: oController.onLoginPress.bind(oController) }),
+                        new sap.m.Text({ id: "errorText", text: "", visible: false, textAlign: "Center" })
+                    ]
+                });
+                return oPage;
+            }
+        });
+
+        sap.ui.getCore().attachInit(function () {
+            var oView = sap.ui.view({
+                type: sap.ui.core.mvc.ViewType.JS,
+                viewName: "login.Login"
+            });
+            oView.placeAt("content");
+        });
+    </script>
+</head>
+<body class="sapUiBody" id="content">
+</body>
+</html>
