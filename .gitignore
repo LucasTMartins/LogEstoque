@@ -2,7 +2,7 @@ node_modules/
 target/
 _out/
 gen/
-docs/
+docs-bak/
 
 .cdsrc-private.json
 default-*.json
