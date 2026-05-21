@@ -19,6 +19,14 @@
     "watch-logestoque": "cds watch --open br.dev.imlucas.logestoque/index.html?sap-ui-xx-viewCache=false --livereload false",
     "test": "node --test"
   },
+  "cds": {
+    "requires": {
+      "auth": {
+        "kind": "custom",
+        "impl": "./srv/auth/auth-middleware"
+      }
+    }
+  },
   "private": true,
   "workspaces": [
     "app/*"

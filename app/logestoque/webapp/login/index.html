@@ -1,75 +1,128 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LogEstoque - Login</title>
-    <script id="sap-ui-bootstrap"
-            src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
-            data-sap-ui-theme="sap_fiori_3"
-            data-sap-ui-libs="sap.m"
-            data-sap-ui-bindingSyntax="complex"
-            data-sap-ui-compatVersion="edge"
-            data-sap-ui-preload="async"
-            data-sap-ui-resourceroots='{"login": "./"}'
-    ></script>
-    <script>
-        // Define the login controller
-        sap.ui.controller("login.Login", {
-            onLoginPress: function () {
-                var oView = this.getView();
-                var sUsername = oView.byId("usernameInput").getValue();
-                var sPassword = oView.byId("passwordInput").getValue();
-                var sError = oView.byId("errorText");
-
-                fetch('/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: sUsername, password: sPassword })
-                })
-                .then(function (response) {
-                    if (!response.ok) {
-                        return response.json().then(function (err) { throw new Error(err.error); });
-                    }
-                    return response.json();
-                })
-                .then(function (data) {
-                    sessionStorage.setItem('token', data.token);
-                    window.location.href = '/';
-                })
-                .catch(function (err) {
-                    sError.setText(err.message);
-                    sError.setVisible(true);
-                });
-            }
-        });
-
-        // Define the login view (JS view, no XML file needed)
-        sap.ui.jsview("login.Login", {
-            getControllerName: function () {
-                return "login.Login"; }(),
-            createContent: function (oController) {
-                var oPage = new sap.m.Page({
-                    title: "Login - LogEstoque",
-                    content: [
-                        new sap.m.Input({ id: "usernameInput", placeholder: "Usuário", width: "300px" }),
-                        new sap.m.Input({ id: "passwordInput", type: "Password", placeholder: "Senha", width: "300px" }),
-                        new sap.m.Button({ text: "Entrar", press: oController.onLoginPress.bind(oController) }),
-                        new sap.m.Text({ id: "errorText", text: "", visible: false, textAlign: "Center" })
-                    ]
-                });
-                return oPage;
-            }
-        });
-
-        sap.ui.getCore().attachInit(function () {
-            var oView = sap.ui.view({
-                type: sap.ui.core.mvc.ViewType.JS,
-                viewName: "login.Login"
-            });
-            oView.placeAt("content");
-        });
-    </script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "72", "72full", Arial, Helvetica, sans-serif;
+            background: #f5f6f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.15);
+            padding: 48px 40px;
+            width: 360px;
+        }
+        h1 { font-size: 1.25rem; font-weight: 700; color: #0a6ed1; margin-bottom: 6px; }
+        .subtitle { font-size: .875rem; color: #6a6d70; margin-bottom: 32px; }
+        label { display: block; font-size: .875rem; color: #32363a; margin-bottom: 6px; }
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #89919a;
+            border-radius: 4px;
+            font-size: .875rem;
+            color: #32363a;
+            margin-bottom: 16px;
+            outline: none;
+        }
+        input:focus { border-color: #0a6ed1; }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #0a6ed1;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: .875rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover { background: #085caf; }
+        button:disabled { background: #89919a; cursor: not-allowed; }
+        .error {
+            display: none;
+            color: #bb0000;
+            font-size: .8125rem;
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: #fff0f0;
+            border: 1px solid #bb0000;
+            border-radius: 4px;
+        }
+    </style>
 </head>
-<body class="sapUiBody" id="content">
+<body>
+    <div class="card">
+        <h1>LogEstoque</h1>
+        <p class="subtitle">Controle de movimentação de estoque</p>
+        <label for="username">Usuário</label>
+        <input type="text" id="username" autocomplete="username" />
+        <label for="password">Senha</label>
+        <input type="password" id="password" autocomplete="current-password" />
+        <button id="btnLogin">Entrar</button>
+        <div class="error" id="errorMsg"></div>
+    </div>
+    <script>
+        // If already authenticated, skip the login page
+        if (sessionStorage.getItem('token')) {
+            var ret = new URLSearchParams(window.location.search).get('return');
+            window.location.replace(ret || '/br.dev.imlucas.logestoque/');
+        }
+
+        function doLogin() {
+            var username = document.getElementById('username').value.trim();
+            var password = document.getElementById('password').value;
+            var errorEl = document.getElementById('errorMsg');
+            var btn = document.getElementById('btnLogin');
+
+            errorEl.style.display = 'none';
+
+            if (!username || !password) {
+                errorEl.textContent = 'Preencha usuário e senha.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Entrando...';
+
+            fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    if (!res.ok) throw new Error(data.error || 'Erro ao fazer login');
+                    return data;
+                });
+            })
+            .then(function (data) {
+                sessionStorage.setItem('token', data.token);
+                var returnUrl = new URLSearchParams(window.location.search).get('return');
+                window.location.replace(returnUrl || '/br.dev.imlucas.logestoque/index.html');
+            })
+            .catch(function (err) {
+                errorEl.textContent = err.message;
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            });
+        }
+
+        document.getElementById('btnLogin').addEventListener('click', doLogin);
+        document.getElementById('username').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+        document.getElementById('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+    </script>
 </body>
 </html>

@@ -1,14 +1,15 @@
 sap.ui.define([
-    "sap/ui/core/mvc/Controller",
-    "sap/ui/util/Storage"
-], function (Controller, Storage) {
+    "sap/ui/core/mvc/Controller"
+], function (Controller) {
     "use strict";
-    return Controller.extend("login.Login", {
-        onLoginPress: function () {
+    return Controller.extend("logestoque.login.Login", {
+        onLogin: function () {
             var oView = this.getView();
-            var sUsername = oView.byId("usernameInput").getValue();
-            var sPassword = oView.byId("passwordInput").getValue();
-            var sError = oView.byId("errorText");
+            var sUsername = oView.byId("username").getValue();
+            var sPassword = oView.byId("password").getValue();
+            var oError = oView.byId("errorMessage");
+
+            oError.setVisible(false);
 
             fetch("/auth/login", {
                 method: "POST",
@@ -18,18 +19,17 @@ sap.ui.define([
             .then(async function (response) {
                 if (!response.ok) {
                     const err = await response.json();
-                    throw new Error(err.error);
+                    throw new Error(err.error || "Credenciais inválidas");
                 }
                 return response.json();
             })
             .then(function (data) {
-                var oStorage = new Storage(Storage.Type.session);
-                oStorage.put("token", data.token);
-                sap.m.URLHelper.redirect("/", true);
+                sessionStorage.setItem("token", data.token);
+                window.location.href = "/";
             })
             .catch(function (err) {
-                sError.setText(err.message);
-                sError.setVisible(true);
+                oError.setText(err.message);
+                oError.setVisible(true);
             });
         }
     });

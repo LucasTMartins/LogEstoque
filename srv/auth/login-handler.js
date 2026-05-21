@@ -30,14 +30,15 @@ async function loginHandler(req, res) {
   }
 
   // Busca permissões do usuário
-  const { UserPermissions, Permissions } = db.entities('db.auth');
+  const { UserPermissions } = db.entities('db.auth');
   const userPerms = await db.run(
     SELECT.from(UserPermissions)
       .columns('permission.name')
       .where({ user_ID: user.ID })
   );
 
-  const roles = userPerms.map(p => p.permission_code || p['permission.code']);
+  // CAP flattens "permission.name" to "permission_name" in the result rows
+  const roles = userPerms.map(p => p.permission_name).filter(Boolean);
 
   const token = signToken({
     sub: user.ID,

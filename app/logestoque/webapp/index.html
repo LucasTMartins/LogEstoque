@@ -10,6 +10,40 @@
             height: 100%;
         }
     </style>
+    <script>
+        (function () {
+            var token = sessionStorage.getItem('token');
+            if (!token) {
+                var returnUrl = encodeURIComponent(window.location.href);
+                window.location.replace('/login?return=' + returnUrl);
+                return;
+            }
+
+            // Inject Bearer token into every XHR request
+            var _open = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function (method, url) {
+                var self = this;
+                this._url = url;
+                // Redirect to login on API 401 (expired token)
+                this.addEventListener('load', function () {
+                    if (self.status === 401 && self._url && self._url.indexOf('/odata/v4/') !== -1) {
+                        sessionStorage.removeItem('token');
+                        window.location.replace('/login');
+                    }
+                });
+                return _open.apply(self, arguments);
+            };
+
+            var _send = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function (body) {
+                var tok = sessionStorage.getItem('token');
+                if (tok) {
+                    try { this.setRequestHeader('Authorization', 'Bearer ' + tok); } catch (e) {}
+                }
+                return _send.apply(this, [body]);
+            };
+        })();
+    </script>
     <script
         id="sap-ui-bootstrap"
         src="https://sapui5.hana.ondemand.com/1.148.0/resources/sap-ui-core.js"

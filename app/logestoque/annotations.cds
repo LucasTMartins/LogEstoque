@@ -1,12 +1,201 @@
 using MainService as service from '../../srv/main';
 
+// ─── Moviments (entidade principal de CRUD) ───────────────────────────────────
+
+annotate service.Moviments with @(
+    UI.LineItem             : [
+        {
+            $Type: 'UI.DataField',
+            Value: status,
+            Label: 'Status',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: type,
+            Label: 'Tipo',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: material.code,
+            Label: 'Material',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: material.description,
+            Label: 'Descrição',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: quantity,
+            Label: 'Quantidade',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: originWarehouse.code,
+            Label: 'Armazém Origem',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: destinationWarehouse.code,
+            Label: 'Armazém Destino',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: createdAt,
+            Label: 'Criado Em',
+        },
+        {
+            $Type  : 'UI.DataFieldForAction',
+            Action : 'MainService.approve',
+            Label  : 'Aprovar',
+        },
+        {
+            $Type  : 'UI.DataFieldForAction',
+            Action : 'MainService.rejectMoviment',
+            Label  : 'Rejeitar',
+        },
+        {
+            $Type  : 'UI.DataFieldForAction',
+            Action : 'MainService.conclude',
+            Label  : 'Concluir',
+        },
+    ],
+    UI.FieldGroup #Details  : {
+        $Type: 'UI.FieldGroupType',
+        Data : [
+            {
+                $Type: 'UI.DataField',
+                Value: type,
+                Label: 'Tipo de Movimentação',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: material_ID,
+                Label: 'Material',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: quantity,
+                Label: 'Quantidade',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: originWarehouse_ID,
+                Label: 'Armazém Origem',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: destinationWarehouse_ID,
+                Label: 'Armazém Destino',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: status,
+                Label: 'Status',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: observation,
+                Label: 'Observação',
+            },
+        ],
+    },
+    UI.Facets               : [{
+        $Type : 'UI.ReferenceFacet',
+        ID    : 'DetailsFacet',
+        Label : 'Detalhes da Movimentação',
+        Target: '@UI.FieldGroup#Details',
+    }],
+);
+
+// Value helps e textos para associações em Moviments
+annotate service.Moviments with {
+    material             @(
+        Common.Text            : material.code,
+        Common.TextArrangement : #TextOnly,
+        Common.ValueList       : {
+            $Type          : 'Common.ValueListType',
+            CollectionPath : 'Materials',
+            Parameters     : [
+                {
+                    $Type             : 'Common.ValueListParameterOut',
+                    LocalDataProperty : material_ID,
+                    ValueListProperty : 'ID',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'code',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'description',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'unitMeasure',
+                },
+            ],
+        },
+    );
+    originWarehouse      @(
+        Common.Text      : originWarehouse.code,
+        Common.ValueList : {
+            $Type          : 'Common.ValueListType',
+            CollectionPath : 'Warehouses',
+            Parameters     : [
+                {
+                    $Type             : 'Common.ValueListParameterOut',
+                    LocalDataProperty : originWarehouse_ID,
+                    ValueListProperty : 'ID',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'code',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'name',
+                },
+            ],
+        },
+    );
+    destinationWarehouse @(
+        Common.Text      : destinationWarehouse.code,
+        Common.ValueList : {
+            $Type          : 'Common.ValueListType',
+            CollectionPath : 'Warehouses',
+            Parameters     : [
+                {
+                    $Type             : 'Common.ValueListParameterOut',
+                    LocalDataProperty : destinationWarehouse_ID,
+                    ValueListProperty : 'ID',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'code',
+                },
+                {
+                    $Type             : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty : 'name',
+                },
+            ],
+        },
+    );
+    status               @(
+        Core.Computed : true,
+        UI.Hidden     : false,
+    );
+}
+
+// ─── MovimentByWarehouse (view desnormalizada — somente leitura) ──────────────
+
 annotate service.MovimentByWarehouse with @(
     UI.FieldGroup #GeneratedGroup: {
         $Type: 'UI.FieldGroupType',
         Data : [
             {
                 $Type: 'UI.DataField',
-                Label: 'Tipo Material',
+                Label: 'Tipo',
                 Value: type,
             },
             {
@@ -23,7 +212,7 @@ annotate service.MovimentByWarehouse with @(
             },
             {
                 $Type: 'UI.DataField',
-                Label: 'quantity',
+                Label: 'Quantidade',
                 Value: quantity,
             },
             {
@@ -44,12 +233,12 @@ annotate service.MovimentByWarehouse with @(
             },
             {
                 $Type: 'UI.DataField',
-                Label: 'status',
+                Label: 'Status',
                 Value: status,
             },
             {
                 $Type: 'UI.DataField',
-                Label: 'observation',
+                Label: 'Observação',
                 Value: observation,
             },
         ],
@@ -59,7 +248,7 @@ annotate service.MovimentByWarehouse with @(
         ID    : 'GeneratedFacet1',
         Label : 'General Information',
         Target: '@UI.FieldGroup#GeneratedGroup',
-    }, ],
+    }],
     UI.LineItem                  : [
         {
             $Type: 'UI.DataField',
@@ -108,7 +297,7 @@ annotate service.MovimentByWarehouse with @(
         },
         {
             $Type: 'UI.DataField',
-            Label: 'Status Movimentação',
+            Label: 'Status',
             Value: status,
         },
         {
@@ -120,21 +309,6 @@ annotate service.MovimentByWarehouse with @(
             $Type: 'UI.DataField',
             Label: 'Criado Em',
             Value: createdAt,
-        },
-        {
-            $Type: 'UI.DataField',
-            Label: 'Criado Por',
-            Value: createdBy,
-        },
-        {
-            $Type: 'UI.DataField',
-            Label: 'Modificado Em',
-            Value: modifiedAt,
-        },
-        {
-            $Type: 'UI.DataField',
-            Label: 'Modificado Por',
-            Value: modifiedBy,
         },
     ],
 );
