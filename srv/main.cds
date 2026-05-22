@@ -1,6 +1,7 @@
 using {
     db.inventory,
-    db.masterdata
+    db.masterdata,
+    db.auth
 } from '../db/index.cds';
 
 service MainService @(requires: 'authenticated-user') {
@@ -25,6 +26,24 @@ service MainService @(requires: 'authenticated-user') {
         action approve()                                          returns Moviments;
         action rejectMoviment(@mandatory reason : String(500))    returns Moviments;
         action conclude()                                         returns Moviments;
+    };
+
+    // Value helps para enums (dados estáticos, handler em main.js)
+    @readonly entity MovimentTypesVH {
+        key codigo   : String(1);
+            descricao: String(50);
+    }
+
+    @readonly entity MovimentStatusVH {
+        key codigo   : String(1);
+            descricao: String(50);
+    }
+
+    @readonly entity UsersVH as projection on auth.Users {
+        key username  as usuario,
+            firstName as nome,
+            lastName  as sobrenome,
+            active    as ativo
     };
 
     // Value helps (somente leitura)

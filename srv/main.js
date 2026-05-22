@@ -136,10 +136,77 @@ module.exports = class MainService extends cds.ApplicationService {
             return SELECT.one.from(Moviments).where({ ID });
         });
 
+        // ── Value helps para enums (dados estáticos) ───────────────────────
+
+        const MOVIMENT_TYPES = [
+            { codigo: 'E', descricao: 'Entrada' },
+            { codigo: 'S', descricao: 'Saída'   },
+        ];
+
+        const MOVIMENT_STATUS = [
+            { codigo: 'P', descricao: 'Pendente'  },
+            { codigo: 'A', descricao: 'Aprovado'  },
+            { codigo: 'R', descricao: 'Rejeitado' },
+            { codigo: 'C', descricao: 'Concluído' },
+        ];
+
+        this.on('READ', 'MovimentTypesVH',  () => MOVIMENT_TYPES);
+        this.on('READ', 'MovimentStatusVH', () => MOVIMENT_STATUS);
+
+        this.before('READ', 'Moviments', (req) => {
+            const w = req.query?.SELECT?.where;
+            if (w) req.query.SELECT.where = _expandDateFilters(w);
+        });
+
+        this.after('READ', 'Moviments', (results) => {
+            const rows = Array.isArray(results) ? results : [results];
+            rows.forEach(row => {
+                if (row.createdAt)  row.createdAt  = row.createdAt.slice(0, 10);
+                if (row.modifiedAt) row.modifiedAt = row.modifiedAt.slice(0, 10);
+            });
+        });
+
         await super.init();
     }
 
 };
+
+// ── Filtros de data: converte eq de data em range do dia inteiro ───────────────
+
+const _DATE_FIELDS = new Set(['createdAt', 'modifiedAt']);
+const _DATE_MATCH  = /^(\d{4}-\d{2}-\d{2})(?:T[\d:.]+Z)?$/;
+
+function _expandDateFilters(where) {
+    if (!Array.isArray(where)) return where;
+    const out = [];
+    for (let i = 0; i < where.length; i++) {
+        const token = where[i];
+        const match = token?.ref && _DATE_FIELDS.has(token.ref[0]) &&
+                      where[i + 1] === '=' &&
+                      typeof where[i + 2]?.val === 'string' &&
+                      where[i + 2].val.match(_DATE_MATCH);
+        if (match) {
+            const field   = token.ref[0];
+            const date    = match[1];
+            const nextDay = new Date(`${date}T00:00:00.000Z`);
+            nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+            const next    = nextDay.toISOString().slice(0, 10);
+            out.push(
+                { ref: [field] }, '>=', { val: `${date}T00:00:00.000Z` },
+                'and',
+                { ref: [field] }, '<',  { val: `${next}T00:00:00.000Z` }
+            );
+            i += 2;
+        } else if (Array.isArray(token)) {
+            out.push(_expandDateFilters(token));
+        } else if (token?.xpr) {
+            out.push({ ...token, xpr: _expandDateFilters(token.xpr) });
+        } else {
+            out.push(token);
+        }
+    }
+    return out;
+}
 
 // ── Função auxiliar: atualizar estoque e criar histórico ───────────────────────
 

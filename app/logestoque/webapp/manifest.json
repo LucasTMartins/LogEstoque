@@ -102,6 +102,7 @@
           "options": {
             "settings": {
               "contextPath": "/Moviments",
+              "useSemanticDateRange": false,
               "variantManagement": "Page",
               "navigation": {
                 "Moviments": {

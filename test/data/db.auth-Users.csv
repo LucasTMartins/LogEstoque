@@ -2,7 +2,7 @@ ID,username,firstName,lastName,passwordHash,active,createdAt,createdBy,modifiedA
 14138603-efac-4d6f-94f0-bd2f857f171f,joao.silva,joao,silva,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-01-01T03:00:00.000Z,admin,2023-01-02T03:00:00.000Z,admin
 14138604-15ce-4a81-8ada-eac2777ff2cf,maria.santos,maria,santos,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,false,2023-01-04T03:00:00.000Z,admin,2023-01-05T03:00:00.000Z,admin
 14138605-96d8-4f98-900f-f1fbcc411079,pedro.alves,pedro,alves,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-01-07T03:00:00.000Z,admin,2023-01-08T03:00:00.000Z,admin
-14138606-c2a8-4e73-9a12-1e64c31c7882,ana.olivei,ana,olivei,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,false,2023-01-10T03:00:00.000Z,admin,2023-01-11T03:00:00.000Z,admin
+14138606-c2a8-4e73-9a12-1e64c31c7882,admin,Admin,Nastro,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,false,2023-01-10T03:00:00.000Z,admin,2023-01-11T03:00:00.000Z,admin
 14138607-1616-4d03-8d9d-6f96475df31e,carlos.edu,carlos,edu,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-01-13T03:00:00.000Z,admin,2023-01-14T03:00:00.000Z,admin
 14138608-b2d9-47a6-852c-b5306a472928,lucia.lima,lucia,lima,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,false,2023-01-16T03:00:00.000Z,admin,2023-01-17T03:00:00.000Z,admin
 14138609-7261-4d29-a728-5a6684fff303,marcos.fer,marcos,fer,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-01-19T03:00:00.000Z,admin,2023-01-20T03:00:00.000Z,admin

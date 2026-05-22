@@ -2,7 +2,23 @@ using MainService as service from '../../srv/main';
 
 // ─── Moviments (entidade principal de CRUD) ───────────────────────────────────
 
+annotate service.Moviments with @cds.search: {
+    material.code       : true,
+    material.description: true,
+    statusLabel         : true,
+    typeLabel           : true,
+};
+
 annotate service.Moviments with @(
+    UI.SelectionFields    : [
+        status,
+        type,
+        material,
+        originWarehouse,
+        destinationWarehouse,
+        createdAt,
+        createdBy,
+    ],
     UI.LineItem           : [
         {
             $Type: 'UI.DataField',
@@ -110,7 +126,7 @@ annotate service.Moviments with @(
 
 // Value helps e textos para associações em Moviments
 annotate service.Moviments with {
-    material             @(
+    material             @title: 'Material' @(
         Common.Text           : material.code,
         Common.TextArrangement: #TextOnly,
         Common.ValueList      : {
@@ -136,9 +152,8 @@ annotate service.Moviments with {
                 },
             ],
         },
-        UI.Hidden             : true,
     );
-    originWarehouse      @(
+    originWarehouse      @title: 'Armazém Origem' @(
         Common.Text     : originWarehouse.code,
         Common.ValueList: {
             $Type         : 'Common.ValueListType',
@@ -159,9 +174,8 @@ annotate service.Moviments with {
                 },
             ],
         },
-        UI.Hidden       : true,
     );
-    destinationWarehouse @(
+    destinationWarehouse @title: 'Armazém Destino' @(
         Common.Text     : destinationWarehouse.code,
         Common.ValueList: {
             $Type         : 'Common.ValueListType',
@@ -182,53 +196,152 @@ annotate service.Moviments with {
                 },
             ],
         },
-        UI.Hidden       : true,
     );
-    type                 @(
-        Common.ValueListWithFixedValues: true,
-        Common.Text                    : typeLabel,
-        Common.TextArrangement         : #TextOnly,
+    type   @title: 'Tipo' @(
+        Common.Text          : typeLabel,
+        Common.TextArrangement: #TextOnly,
+        Common.ValueList     : {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'MovimentTypesVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: type,
+                    ValueListProperty: 'codigo',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'descricao',
+                },
+            ],
+        },
     );
-    status               @(
-        Core.Computed                  : true,
-        UI.Hidden                      : false,
-        Common.ValueListWithFixedValues: true,
-        Common.Text                    : statusLabel,
-        Common.TextArrangement         : #TextOnly,
+    status @title: 'Status' @(
+        Core.Computed        : true,
+        UI.Hidden            : false,
+        Common.Text          : statusLabel,
+        Common.TextArrangement: #TextOnly,
+        Common.ValueList     : {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'MovimentStatusVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: status,
+                    ValueListProperty: 'codigo',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'descricao',
+                },
+            ],
+        },
     );
-    statusLabel          @UI.Hidden;
-    typeLabel            @UI.Hidden;
+    statusLabel @UI.Hidden;
+    typeLabel   @UI.Hidden;
 }
 
 // ─── Moviments — campos gerenciados ──────────────────────────────────────────
 
 annotate service.Moviments with {
-    ID          @UI.Hidden;
-    createdAt   @title: 'Criado Em';
-    createdBy   @title: 'Criado Por';
-    modifiedAt  @title: 'Alterado Em';
-    modifiedBy  @title: 'Alterado Por';
-    observation @title: 'Observação';
+    ID                   @UI.Hidden;
+    createdAt @title: 'Data Criação' @UI.HiddenFilter: false @odata.Type: 'Edm.Date';
+    createdBy @title: 'Criado Por'  @UI.HiddenFilter: false @(
+        Common.ValueList: {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'UsersVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: createdBy,
+                    ValueListProperty: 'usuario',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'nome',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'sobrenome',
+                },
+            ],
+        },
+    );
+    modifiedAt @title: 'Alterado Em' @UI.HiddenFilter: false @odata.Type: 'Edm.Date';
+    modifiedBy @title: 'Alterado Por' @UI.HiddenFilter: false @(
+        Common.ValueList: {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'UsersVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: modifiedBy,
+                    ValueListProperty: 'usuario',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'nome',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'sobrenome',
+                },
+            ],
+        },
+    );
+    observation          @title: 'Observação';
+    quantity             @title: 'Quantidade';
 }
 
 // ─── MovimentByWarehouse — anotações de campos ───────────────────────────────
 
 annotate service.MovimentByWarehouse with {
-    ID          @UI.Hidden;
-    createdAt   @title: 'Criado Em';
-    createdBy   @title: 'Criado Por';
-    modifiedAt  @title: 'Alterado Em';
-    modifiedBy  @title: 'Alterado Por';
-    observation @title: 'Observação';
-    type        @(
-        Common.ValueListWithFixedValues: true,
-        Common.Text                    : typeLabel,
-        Common.TextArrangement         : #TextOnly,
+    ID                       @UI.Hidden;
+    createdAt                @title: 'Criado Em';
+    createdBy                @title: 'Criado Por';
+    modifiedAt               @title: 'Alterado Em';
+    modifiedBy               @title: 'Alterado Por';
+    observation              @title: 'Observação';
+    materialCode             @title: 'Material';
+    originWarehouseCode      @title: 'Armazém Origem';
+    destinationWarehouseCode @title: 'Armazém Destino';
+    type   @(
+        Common.Text           : typeLabel,
+        Common.TextArrangement: #TextOnly,
+        Common.ValueList      : {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'MovimentTypesVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: type,
+                    ValueListProperty: 'codigo',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'descricao',
+                },
+            ],
+        },
     );
-    status      @(
-        Common.ValueListWithFixedValues: true,
-        Common.Text                    : statusLabel,
-        Common.TextArrangement         : #TextOnly,
+    status @(
+        Common.Text           : statusLabel,
+        Common.TextArrangement: #TextOnly,
+        Common.ValueList      : {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'MovimentStatusVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: status,
+                    ValueListProperty: 'codigo',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'descricao',
+                },
+            ],
+        },
     );
     statusLabel @UI.Hidden;
     typeLabel   @UI.Hidden;
@@ -237,6 +350,15 @@ annotate service.MovimentByWarehouse with {
 // ─── MovimentByWarehouse (view desnormalizada — somente leitura) ──────────────
 
 annotate service.MovimentByWarehouse with @(
+    UI.SelectionFields           : [
+        status,
+        type,
+        materialCode,
+        originWarehouseCode,
+        destinationWarehouseCode,
+        createdAt,
+        createdBy,
+    ],
     UI.FieldGroup #GeneratedGroup: {
         $Type: 'UI.FieldGroupType',
         Data : [
