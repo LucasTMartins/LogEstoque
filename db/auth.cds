@@ -6,13 +6,13 @@ using {
 namespace db.auth;
 
 entity Users : cuid, managed {
-    username    : String(12)  @mandatory  @assert.format: '^[a-zA-Z0-9._-]{3,12}$'  @assert.unique;
-    firstName   : String(20)  @mandatory;
-    lastName    : String(100) @mandatory;
-    password    : String(255) @mandatory;
-    active      : Boolean     @mandatory;
-    permissions : Composition of many UserPermissions
-                      on permissions.user = $self;
+    username     : String(12)  @mandatory  @assert.format: '^[a-zA-Z0-9._-]{3,12}$'  @assert.unique;
+    firstName    : String(20)  @mandatory;
+    lastName     : String(100) @mandatory;
+    passwordHash : String(255) @mandatory;
+    active       : Boolean     @mandatory;
+    permissions  : Composition of many UserPermissions
+                       on permissions.user = $self;
 }
 
 entity Permissions : cuid, managed {

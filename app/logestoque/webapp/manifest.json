@@ -85,72 +85,50 @@
       "routes": [
         {
           "pattern": ":?query:",
-          "name": "MovimentByWarehouseList",
-          "target": "MovimentByWarehouseList"
+          "name": "MovimentsList",
+          "target": "MovimentsList"
         },
         {
-          "pattern": "MovimentByWarehouse({key}):?query:",
-          "name": "MovimentByWarehouseObjectPage",
-          "target": "MovimentByWarehouseObjectPage"
-        },
-        {
-          "pattern": "MovimentByWarehouse({key})/details({key2}):?query:",
-          "name": "MovimentDetailObjectPage",
-          "target": "MovimentDetailObjectPage"
+          "pattern": "Moviments({key}):?query:",
+          "name": "MovimentsObjectPage",
+          "target": "MovimentsObjectPage"
         }
       ],
       "targets": {
-        "MovimentByWarehouseList": {
+        "MovimentsList": {
           "type": "Component",
-          "id": "MovimentByWarehouseList",
+          "id": "MovimentsList",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
-              "contextPath": "/MovimentByWarehouse",
+              "contextPath": "/Moviments",
+              "useSemanticDateRange": false,
               "variantManagement": "Page",
               "navigation": {
-                "MovimentByWarehouse": {
+                "Moviments": {
                   "detail": {
-                    "route": "MovimentByWarehouseObjectPage"
+                    "route": "MovimentsObjectPage"
                   }
                 }
               },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "type": "ResponsiveTable"
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Multi"
                   }
                 }
               }
             }
           }
         },
-        "MovimentByWarehouseObjectPage": {
+        "MovimentsObjectPage": {
           "type": "Component",
-          "id": "MovimentByWarehouseObjectPage",
+          "id": "MovimentsObjectPage",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "editableHeaderContent": false,
-              "contextPath": "/MovimentByWarehouse",
-              "navigation": {
-                "details": {
-                  "detail": {
-                    "route": "MovimentDetailObjectPage"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "MovimentDetailObjectPage": {
-          "type": "Component",
-          "id": "MovimentDetailObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "editableHeaderContent": false,
-              "contextPath": "/MovimentByWarehouse/details"
+              "contextPath": "/Moviments"
             }
           }
         }

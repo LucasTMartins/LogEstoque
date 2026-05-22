@@ -2,6 +2,7 @@ node_modules/
 target/
 _out/
 gen/
+docs-bak/
 
 .cdsrc-private.json
 default-*.json
@@ -14,6 +15,7 @@ mta_archives/
 
 # Other
 .DS_Store
+.env
 
 # @cap-js/cds-typer
 @cds-models

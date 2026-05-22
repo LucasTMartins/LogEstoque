@@ -1,53 +1,119 @@
 using {
-    db.inventory
+    db.inventory,
+    db.masterdata,
+    db.auth
 } from '../db/index.cds';
 
-service MainService {
-    entity MovimentByWarehouse as
-        projection on inventory.Moviments {
-            key ID,
-                createdAt,
-                createdBy,
-                modifiedAt,
-                modifiedBy,
-                type,
-                material.code             as materialCode,
-                material.description      as materialDescription,
-                material.unitMeasure      as materialUnitMeasure,
-                quantity,
-                originWarehouse.code      as originWarehouseCode,
-                originWarehouse.name      as originWarehouseName,
-                destinationWarehouse.code as destinationWarehouseCode,
-                destinationWarehouse.name as destinationWarehouseName,
-                status,
-                observation,
-                details : Composition of many MovimentDetail
-                              on details.moviment = $self
-        };
+service MainService @(requires: 'authenticated-user') {
 
-    entity MovimentDetail      as
-        projection on inventory.StockHistory {
-            key ID,
-                createdAt,
-                createdBy,
-                modifiedAt,
-                modifiedBy,
+    // Entidade principal — CRUD completo + ações de workflow
+    @cds.redirection.target: true
+    entity Moviments  as projection on inventory.Moviments {
+        *,
+        case status
+            when 'P' then 'Pendente'
+            when 'A' then 'Aprovado'
+            when 'R' then 'Rejeitado'
+            when 'C' then 'Concluído'
+            else status
+        end as statusLabel : String,
+        case type
+            when 'E' then 'Entrada'
+            when 'S' then 'Saída'
+            else type
+        end as typeLabel : String
+    } actions {
+        action approve()                                          returns Moviments;
+        action rejectMoviment(@mandatory reason : String(500))    returns Moviments;
+        action conclude()                                         returns Moviments;
+    };
 
-                moviment,
+    // Value helps para enums (dados estáticos, handler em main.js)
+    @readonly entity MovimentTypesVH {
+        key codigo   : String(1);
+            descricao: String(50);
+    }
 
-                stock.material.code        as materialCode,
-                stock.material.description as materialDescription,
-                stock.material.unitMeasure as materialUnitMeasure,
+    @readonly entity MovimentStatusVH {
+        key codigo   : String(1);
+            descricao: String(50);
+    }
 
-                stock.warehouse.code       as warehouseCode,
-                stock.warehouse.name       as warehouseName,
+    @readonly entity UsersVH as projection on auth.Users {
+        key username  as usuario,
+            firstName as nome,
+            lastName  as sobrenome,
+            active    as ativo
+    };
 
-                lastQuantity,
-                currentQuantity,
+    // Value helps (somente leitura)
+    @readonly entity Materials  as projection on masterdata.Materials {
+        key ID,
+            code,
+            description,
+            unitMeasure,
+            active
+    };
 
-                moviment.type              as type,
-                moviment.quantity          as movimentQuantity,
-                moviment.status            as status,
-                moviment.observation       as observation
-        };
+    @readonly entity Warehouses as projection on masterdata.Warehouses {
+        key ID,
+            code,
+            name,
+            capacity,
+            active
+    };
+
+    // View desnormalizada para relatórios (somente leitura)
+    @readonly entity MovimentByWarehouse  as projection on inventory.Moviments {
+        key ID,
+            createdAt,
+            createdBy,
+            modifiedAt,
+            modifiedBy,
+            type,
+            material.code             as materialCode,
+            material.description      as materialDescription,
+            material.unitMeasure      as materialUnitMeasure,
+            quantity,
+            originWarehouse.code      as originWarehouseCode,
+            originWarehouse.name      as originWarehouseName,
+            destinationWarehouse.code as destinationWarehouseCode,
+            destinationWarehouse.name as destinationWarehouseName,
+            status,
+            observation,
+            case status
+                when 'P' then 'Pendente'
+                when 'A' then 'Aprovado'
+                when 'R' then 'Rejeitado'
+                when 'C' then 'Concluído'
+                else status
+            end as statusLabel : String,
+            case type
+                when 'E' then 'Entrada'
+                when 'S' then 'Saída'
+                else type
+            end as typeLabel : String,
+            details                   : Composition of many MovimentDetail
+                                            on details.moviment.ID = ID
+    };
+
+    entity MovimentDetail         as projection on inventory.StockHistory {
+        key ID,
+            createdAt,
+            createdBy,
+            modifiedAt,
+            modifiedBy,
+            moviment,
+            stock.material.code        as materialCode,
+            stock.material.description as materialDescription,
+            stock.material.unitMeasure as materialUnitMeasure,
+            stock.warehouse.code       as warehouseCode,
+            stock.warehouse.name       as warehouseName,
+            lastQuantity,
+            currentQuantity,
+            moviment.type              as type,
+            moviment.quantity          as movimentQuantity,
+            moviment.status            as status,
+            moviment.observation       as observation
+    };
 }

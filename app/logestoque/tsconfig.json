@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "es2022",
+    "module": "node16",
     "skipLibCheck": true,
     "allowJs": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "rootDir": "./webapp",
     "outDir": "./dist",
-    "baseUrl": "./",
     "paths": {
       "br/dev/imlucas/logestoque/*": [
         "./webapp/*"
@@ -20,7 +19,8 @@
       "./node_modules/@sapui5/types",
       "../../node_modules/@types",
       "../../node_modules/@sapui5/types"
-    ]
+    ],
+    "esModuleInterop": true
   },
   "include": [
     "./webapp/**/*"
