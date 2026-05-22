@@ -76,7 +76,7 @@
         // If already authenticated, skip the login page
         if (sessionStorage.getItem('token')) {
             var ret = new URLSearchParams(window.location.search).get('return');
-            window.location.replace(ret || '/br.dev.imlucas.logestoque/');
+            window.location.replace(ret || '/br.dev.imlucas.logestoque/index.html');
         }
 
         function doLogin() {

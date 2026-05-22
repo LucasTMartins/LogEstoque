@@ -7,7 +7,21 @@ service MainService @(requires: 'authenticated-user') {
 
     // Entidade principal — CRUD completo + ações de workflow
     @cds.redirection.target: true
-    entity Moviments  as projection on inventory.Moviments actions {
+    entity Moviments  as projection on inventory.Moviments {
+        *,
+        case status
+            when 'P' then 'Pendente'
+            when 'A' then 'Aprovado'
+            when 'R' then 'Rejeitado'
+            when 'C' then 'Concluído'
+            else status
+        end as statusLabel : String,
+        case type
+            when 'E' then 'Entrada'
+            when 'S' then 'Saída'
+            else type
+        end as typeLabel : String
+    } actions {
         action approve()                                          returns Moviments;
         action rejectMoviment(@mandatory reason : String(500))    returns Moviments;
         action conclude()                                         returns Moviments;
@@ -48,6 +62,18 @@ service MainService @(requires: 'authenticated-user') {
             destinationWarehouse.name as destinationWarehouseName,
             status,
             observation,
+            case status
+                when 'P' then 'Pendente'
+                when 'A' then 'Aprovado'
+                when 'R' then 'Rejeitado'
+                when 'C' then 'Concluído'
+                else status
+            end as statusLabel : String,
+            case type
+                when 'E' then 'Entrada'
+                when 'S' then 'Saída'
+                else type
+            end as typeLabel : String,
             details                   : Composition of many MovimentDetail
                                             on details.moviment.ID = ID
     };

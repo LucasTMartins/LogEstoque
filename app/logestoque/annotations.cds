@@ -181,10 +181,37 @@ annotate service.Moviments with {
             ],
         },
     );
-    status               @(
-        Core.Computed : true,
-        UI.Hidden     : false,
+    type   @(
+        Common.ValueListWithFixedValues: true,
+        Common.Text                    : typeLabel,
+        Common.TextArrangement         : #TextOnly,
     );
+    status @(
+        Core.Computed              : true,
+        UI.Hidden                  : false,
+        Common.ValueListWithFixedValues: true,
+        Common.Text                    : statusLabel,
+        Common.TextArrangement         : #TextOnly,
+    );
+    statusLabel @UI.Hidden;
+    typeLabel   @UI.Hidden;
+}
+
+// ─── MovimentByWarehouse — anotações de campos ───────────────────────────────
+
+annotate service.MovimentByWarehouse with {
+    type   @(
+        Common.ValueListWithFixedValues: true,
+        Common.Text                    : typeLabel,
+        Common.TextArrangement         : #TextOnly,
+    );
+    status @(
+        Common.ValueListWithFixedValues: true,
+        Common.Text                    : statusLabel,
+        Common.TextArrangement         : #TextOnly,
+    );
+    statusLabel @UI.Hidden;
+    typeLabel   @UI.Hidden;
 }
 
 // ─── MovimentByWarehouse (view desnormalizada — somente leitura) ──────────────
