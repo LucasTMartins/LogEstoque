@@ -1,0 +1,19 @@
+.lge-materials-page .sapFDynamicPageTitleMainHeading {
+    visibility: collapse;
+}
+
+.sapMBtnBase.sapMBtn.sapFDynamicPageHeaderPinButton {
+    visibility: collapse;
+}
+
+.sapMMenuBtn.sapMMenuBtnRegular.sapMBarChild {
+    visibility: collapse;
+}
+
+.sapMBtnBase.sapMBtn.sapFDynamicPageToggleHeaderIndicator {
+    visibility: collapse;
+}
+
+.sapFDynamicPageTitle .sapFDynamicPageTitleActionsBar.sapMTB {
+    justify-content: flex-start;
+}

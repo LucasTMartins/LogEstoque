@@ -43,12 +43,18 @@
     }
   },
   "sap.ui5": {
-    "flexEnabled": true,
+    "flexEnabled": false,
     "extends": {
       "extensions": {
         "sap.ui.controllerExtensions": {
           "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::MovimentsList": {
             "controllerName": "br.dev.imlucas.logestoque.ext.MovimentsListController"
+          },
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::MaterialsList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
+          },
+          "sap.fe.templates.ObjectPage.ObjectPageController#br.dev.imlucas.logestoque::MovimentsObjectPage": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MovimentsObjectPageController"
           }
         }
       }
@@ -91,7 +97,7 @@
       }
     },
     "resources": {
-      "css": []
+      "css": [{ "uri": "css/style.css" }]
     },
     "routing": {
       "config": {},
@@ -125,7 +131,7 @@
           "options": {
             "settings": {
               "contextPath": "/Moviments",
-              "variantManagement": "Page",
+              "variantManagement": "None",
               "navigation": {
                 "Moviments": {
                   "detail": {
@@ -169,7 +175,7 @@
           "options": {
             "settings": {
               "contextPath": "/Materials",
-              "variantManagement": "Page",
+              "variantManagement": "None",
               "navigation": {
                 "Materials": {
                   "detail": {

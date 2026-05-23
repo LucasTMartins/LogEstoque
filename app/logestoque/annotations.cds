@@ -10,6 +10,18 @@ annotate service.Moviments with @cds.search: {
 };
 
 annotate service.Moviments with @(
+    UI.HeaderInfo         : {
+        TypeName      : 'Movimentação',
+        TypeNamePlural: 'Movimentações',
+        Title         : {
+            $Type: 'UI.DataField',
+            Value: typeLabel,
+        },
+        Description   : {
+            $Type: 'UI.DataField',
+            Value: statusLabel,
+        },
+    },
     UI.SelectionFields    : [
         status,
         type,
