@@ -12,12 +12,20 @@ module.exports = class MainService extends cds.ApplicationService {
 
         // ── Cadastro de materiais ───────────────────────────────────────────
 
+        const canManageMaterials = (req) => {
+            return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
+        };
+
         this.before('CREATE', 'Materials', (req) => {
             if (req.data.active === undefined || req.data.active === null)
                 req.data.active = true;
         });
 
         this.on('DELETE', 'Materials', async (req) => {
+            if (!canManageMaterials(req)) {
+                return req.error(403, 'Você não tem permissão para excluir materiais. Solicite a exclusão à área.');
+            }
+
             const { ID } = req.params[0];
             const material = await SELECT.one.from(Materials).where({ ID });
             if (!material) return req.error(404, 'Material não encontrado');
@@ -63,8 +71,7 @@ module.exports = class MainService extends cds.ApplicationService {
         this.on('READ', 'UnitMeasuresVH', () => UNIT_MEASURES);
 
         this.on('READ', 'CurrentUser', (req) => {
-            const roles = req.user?.roles ?? [];
-            return [{ dummy: '1', canManageMaterials: roles.includes('ESTOQUE') || roles.includes('ADMIN') }];
+            return [{ dummy: '1', canManageMaterials: canManageMaterials(req) }];
         });
 
         // ── Criação de movimentação ─────────────────────────────────────────

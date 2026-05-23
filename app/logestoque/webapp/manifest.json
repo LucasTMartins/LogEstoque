@@ -181,7 +181,19 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable",
-                    "selectionMode": "Multi"
+                    "selectionMode": "Multi",
+                    "creationMode": {
+                      "name": "CreationDialog",
+                      "creationFields": "code,description,unitMeasure"
+                    }
+                  },
+                  "actions": {
+                    "CreateMaterial": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateMaterial",
+                      "text": "Novo Material",
+                      "visible": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": false
+                    }
                   }
                 }
               }

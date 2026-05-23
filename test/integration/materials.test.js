@@ -139,6 +139,29 @@ test('DELETE em material inexistente retorna 404', async () => {
     assert.equal(res.status, 404);
 });
 
+test('DELETE sem permissão retorna mensagem de negócio', async () => {
+    const created = await POST(`${BASE}/Materials`, {
+        code:        'TST-DEL-NOAUTH',
+        description: 'Sem Permissão para Deletar',
+        unitMeasure: 'UN',
+    });
+    const id = created.data.ID;
+    const estoqueAuth = http.defaults.headers.common.Authorization;
+
+    const loginRes = await http.post('/auth/login', { username: 'pedro.alves', password: 'pass-01' });
+    assert.equal(loginRes.status, 200, 'Login deve retornar 200');
+    http.defaults.headers.common.Authorization = `Bearer ${loginRes.data.token}`;
+
+    const res = await http.delete(`${BASE}/Materials(${id})`);
+    http.defaults.headers.common.Authorization = estoqueAuth;
+
+    assert.equal(res.status, 403);
+    assert.match(
+        JSON.stringify(res.data),
+        /Você não tem permissão para excluir materiais/
+    );
+});
+
 // ─── Atualização ──────────────────────────────────────────────────────────────
 
 test('PATCH atualiza descrição do material', async () => {

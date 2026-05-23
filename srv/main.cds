@@ -49,7 +49,8 @@ service MainService @(requires: 'authenticated-user') {
     // Cadastro de materiais — leitura para todos, escrita para ESTOQUE e ADMIN
     @(restrict: [
         { grant: ['READ'],                       to: 'authenticated-user'   },
-        { grant: ['CREATE', 'UPDATE', 'DELETE'], to: ['ESTOQUE', 'ADMIN']   },
+        { grant: ['CREATE', 'UPDATE'],           to: ['ESTOQUE', 'ADMIN']   },
+        { grant: ['DELETE'],                     to: 'authenticated-user'   },
     ])
     entity Materials as projection on masterdata.Materials {
         key ID,
