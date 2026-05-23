@@ -126,6 +126,7 @@
           "options": {
             "settings": {
               "contextPath": "/Moviments",
+              "initialLoad": "Enabled",
               "variantManagement": "None",
               "navigation": {
                 "Moviments": {
@@ -170,6 +171,7 @@
           "options": {
             "settings": {
               "contextPath": "/Materials",
+              "initialLoad": "Enabled",
               "variantManagement": "None",
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
