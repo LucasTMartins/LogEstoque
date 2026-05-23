@@ -7,6 +7,12 @@ using {
 service MainService @(requires: 'authenticated-user') {
 
     // Entidade principal — CRUD completo + ações de workflow
+    @(restrict: [
+        { grant: ['READ', 'UPDATE'],                                to: 'authenticated-user'               },
+        { grant: ['CREATE'],                                        to: ['ESTOQUE', 'LOGISTICA', 'ADMIN']  },
+        { grant: ['DELETE'],                                        to: ['ESTOQUE', 'ADMIN']               },
+        { grant: ['approve', 'rejectMoviment', 'conclude'],         to: 'authenticated-user'               },
+    ])
     @cds.redirection.target: true
     entity Moviments  as projection on inventory.Moviments {
         *,
@@ -66,8 +72,9 @@ service MainService @(requires: 'authenticated-user') {
     };
 
     @readonly entity CurrentUser {
-        key dummy              : String(1);
-            canManageMaterials : Boolean;
+        key dummy               : String(1);
+            canManageMaterials  : Boolean;
+            canManageMoviments  : Boolean;
     };
 
     @readonly entity Warehouses as projection on masterdata.Warehouses {

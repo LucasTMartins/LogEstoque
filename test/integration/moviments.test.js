@@ -268,3 +268,15 @@ test('cria Saída com estoque suficiente (quantidade exata)', async () => {
     assert.equal(res.data.status, 'P');
     assert.equal(res.data.type, 'S');
 });
+
+test('cria Saída sem armazém destino (saída para cliente externo)', async () => {
+    const res = await POST(`${BASE}/Moviments`, {
+        type:               'S',
+        material_ID:        MAT_001,
+        quantity:           5,
+        originWarehouse_ID: W001,
+    });
+    assert.equal(res.data.status, 'P');
+    assert.equal(res.data.type, 'S');
+    assert.ok(!res.data.destinationWarehouse_ID, 'destino deve ser nulo para saída externa');
+});

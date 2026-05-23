@@ -15,8 +15,12 @@ sap.ui.define([
                         .then(function (r) { return r.ok ? r.json() : null; })
                         .then(function (oData) {
                             oPermsModel.setProperty("/canManageMaterials", !!(oData && oData.canManageMaterials));
+                            oPermsModel.setProperty("/canManageMoviments", !!(oData && oData.canManageMoviments));
                         })
-                        .catch(function () { oPermsModel.setProperty("/canManageMaterials", false); });
+                        .catch(function () {
+                            oPermsModel.setProperty("/canManageMaterials", false);
+                            oPermsModel.setProperty("/canManageMoviments", false);
+                        });
                 }
             }
         }

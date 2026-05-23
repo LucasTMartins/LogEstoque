@@ -16,6 +16,10 @@ module.exports = class MainService extends cds.ApplicationService {
             return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
         };
 
+        const canManageMoviments = (req) => {
+            return req.user?.is('ESTOQUE') || req.user?.is('LOGISTICA') || req.user?.is('ADMIN');
+        };
+
         this.before('CREATE', 'Materials', (req) => {
             if (req.data.active === undefined || req.data.active === null)
                 req.data.active = true;
@@ -71,10 +75,24 @@ module.exports = class MainService extends cds.ApplicationService {
         this.on('READ', 'UnitMeasuresVH', () => UNIT_MEASURES);
 
         this.on('READ', 'CurrentUser', (req) => {
-            return [{ dummy: '1', canManageMaterials: canManageMaterials(req) }];
+            return [{ dummy: '1', canManageMaterials: canManageMaterials(req), canManageMoviments: canManageMoviments(req) }];
         });
 
-        // ── Criação de movimentação ─────────────────────────────────────────
+        // ── Criação e deleção de movimentação ─────────────────────────────
+
+        this.on('DELETE', 'Moviments', async (req) => {
+            if (!req.user?.is('ESTOQUE') && !req.user?.is('ADMIN')) {
+                return req.error(403, 'Você não tem permissão para excluir movimentações.');
+            }
+            const { ID } = req.params[0];
+            const moviment = await SELECT.one.from(Moviments).where({ ID });
+            if (!moviment) return req.error(404, 'Movimentação não encontrada.');
+            if (moviment.status !== 'P') {
+                return req.error(409, 'Somente movimentações pendentes podem ser excluídas.');
+            }
+            await DELETE.from(Moviments).where({ ID });
+            return req.reply();
+        });
 
         this.before('CREATE', 'Moviments', async (req) => {
             const data   = req.data;
@@ -89,10 +107,12 @@ module.exports = class MainService extends cds.ApplicationService {
             const matErr   = rules.validateMaterialActive(material);
             if (matErr) return req.error(422, matErr);
 
-            // Armazém destino deve estar ativo
-            const destWh  = await SELECT.one.from(Warehouses).where({ ID: data.destinationWarehouse_ID });
-            const destErr = rules.validateWarehouseActive(destWh, 'destino');
-            if (destErr) return req.error(422, destErr);
+            // Armazém destino deve estar ativo (opcional para Saída externa)
+            if (data.destinationWarehouse_ID) {
+                const destWh  = await SELECT.one.from(Warehouses).where({ ID: data.destinationWarehouse_ID });
+                const destErr = rules.validateWarehouseActive(destWh, 'destino');
+                if (destErr) return req.error(422, destErr);
+            }
 
             // Para Saída: armazém origem ativo + estoque suficiente pré-existente
             if (data.type === rules.TYPE.S) {

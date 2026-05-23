@@ -9,7 +9,8 @@ sap.ui.define([
     "sap/m/VBox",
     "sap/m/MessageBox",
     "sap/m/MessageToast",
-    "sap/ui/core/Item"
+    "sap/ui/core/Item",
+    "sap/m/ComboBox"
 // UI5 AMD modules map one callback argument per dependency.
 // eslint-disable-next-line max-params
 ], function (
@@ -23,7 +24,8 @@ sap.ui.define([
     VBox,
     MessageBox,
     MessageToast,
-    Item
+    Item,
+    ComboBox
 ) {
     "use strict";
 
@@ -163,6 +165,25 @@ sap.ui.define([
         return "Não foi possível criar o material.";
     }
 
+    function getMovimentErrorMessage(oError) {
+        var iStatus = Number(getStatus(oError));
+        var sBackendMessage = getBackendErrorMessage(oError);
+
+        if (iStatus === 401) {
+            return "Sua sessão expirou. Faça login novamente.";
+        }
+
+        if (sBackendMessage && !isGenericHttpMessage(sBackendMessage)) {
+            return sBackendMessage;
+        }
+
+        if (iStatus === 403) {
+            return "Você não tem permissão para realizar esta operação.";
+        }
+
+        return "Não foi possível criar a movimentação.";
+    }
+
     function getSource(oEvent) {
         return oEvent && oEvent.getSource && oEvent.getSource();
     }
@@ -280,9 +301,218 @@ sap.ui.define([
         return bValid;
     }
 
+    function createMoviment(oData) {
+        return fetch("/odata/v4/main/Moviments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(oData)
+        }).then(function (r) {
+            if (!r.ok) {
+                return r.json().then(function (oJson) {
+                    var oErr = new Error(String(r.status));
+                    oErr.status = r.status;
+                    oErr.responseText = JSON.stringify(oJson);
+                    throw oErr;
+                });
+            }
+            return r.json();
+        });
+    }
+
+    function makeSearchComboBox(placeholder) {
+        return new ComboBox({
+            width: "100%",
+            placeholder: placeholder,
+            filterSecondaryValues: false
+        });
+    }
+
+    function populateComboBox(oComboBox, aItems, textFn) {
+        oComboBox.removeAllItems();
+        aItems.forEach(function (item) {
+            oComboBox.addItem(new Item({ key: item.ID, text: textFn(item) }));
+        });
+    }
+
     return {
         onManageMaterials: function (oEvent) {
             navigateToRoute(this, oEvent, "MaterialsList");
+        },
+
+        onCreateMoviment: function (oEvent) {
+            var oModel = getDefaultModel(this, oEvent);
+
+            if (!oModel) {
+                MessageBox.error("Não foi possível acessar o modelo de dados.");
+                return;
+            }
+
+            var matText = function (m) { return m.code + " - " + m.description; };
+            var whText  = function (w) { return w.code + " - " + w.name; };
+
+            var oTypeSelect       = new Select({ width: "100%" });
+            [{ key: "E", text: "Entrada" }, { key: "S", text: "Saída" }]
+                .forEach(function (o) { oTypeSelect.addItem(new Item(o)); });
+
+            var oMaterialComboBox    = makeSearchComboBox("Digite código ou descrição...");
+            var oQuantityInput       = new Input({ type: "Number", placeholder: "1", width: "100%" });
+            var oOriginLabel         = new Label({ text: "Armazém Origem", required: false });
+            var oOriginComboBox      = makeSearchComboBox("Digite código ou nome...");
+            var oDestinationLabel    = new Label({ text: "Armazém Destino", required: true });
+            var oDestinationComboBox = makeSearchComboBox("Digite código ou nome...");
+            var oObservationInput    = new Input({ placeholder: "Observação (opcional)", width: "100%" });
+
+            var EXTERNAL_KEY = "__EXTERNO__";
+
+            oTypeSelect.attachChange(function () {
+                var bSaida = oTypeSelect.getSelectedKey() === "S";
+                oOriginLabel.setRequired(bSaida);
+                oDestinationLabel.setRequired(!bSaida);
+
+                if (bSaida) {
+                    if (!oDestinationComboBox.getItemByKey(EXTERNAL_KEY)) {
+                        oDestinationComboBox.insertItem(
+                            new Item({ key: EXTERNAL_KEY, text: "Externo / Saída para Cliente" }),
+                            0
+                        );
+                    }
+                    if (!oDestinationComboBox.getSelectedKey()) {
+                        oDestinationComboBox.setSelectedKey(EXTERNAL_KEY);
+                    }
+                } else {
+                    var oSpecialItem = oDestinationComboBox.getItemByKey(EXTERNAL_KEY);
+                    if (oSpecialItem) {
+                        if (oDestinationComboBox.getSelectedKey() === EXTERNAL_KEY) {
+                            oDestinationComboBox.setSelectedKey("");
+                        }
+                        oDestinationComboBox.removeItem(oSpecialItem);
+                    }
+                    oOriginComboBox.setSelectedKey("");
+                    oOriginComboBox.setValueState("None");
+                }
+            });
+
+            Promise.all([
+                fetch("/odata/v4/main/Materials?$filter=active eq true&$select=ID,code,description&$top=200").then(function (r) { return r.ok ? r.json() : { value: [] }; }),
+                fetch("/odata/v4/main/Warehouses?$filter=active eq true&$select=ID,code,name&$top=200").then(function (r) { return r.ok ? r.json() : { value: [] }; })
+            ]).then(function (aResults) {
+                populateComboBox(oMaterialComboBox,    aResults[0].value || [], matText);
+                populateComboBox(oOriginComboBox,      aResults[1].value || [], whText);
+                populateComboBox(oDestinationComboBox, aResults[1].value || [], whText);
+            }).catch(function () {
+                MessageToast.show("Não foi possível carregar materiais e armazéns.");
+            });
+
+            var oDialog = new Dialog({
+                title: "Nova Movimentação",
+                contentWidth: "32rem",
+                resizable: true,
+                horizontalScrolling: false,
+                content: new VBox({
+                    width: "100%",
+                    renderType: "Bare",
+                    items: [
+                        new Label({ text: "Tipo", required: true }),
+                        oTypeSelect,
+                        new Label({ text: "Material", required: true }),
+                        oMaterialComboBox,
+                        new Label({ text: "Quantidade", required: true }),
+                        oQuantityInput,
+                        oOriginLabel,
+                        oOriginComboBox,
+                        oDestinationLabel,
+                        oDestinationComboBox,
+                        new Label({ text: "Observação" }),
+                        oObservationInput
+                    ]
+                }).addStyleClass("sapUiSmallMarginTopBottom"),
+                beginButton: new Button({
+                    text: "Criar",
+                    type: "Emphasized",
+                    press: function () {
+                        var bSaida         = oTypeSelect.getSelectedKey() === "S";
+                        var sMaterialID    = oMaterialComboBox.getSelectedKey();
+                        var sOriginID      = oOriginComboBox.getSelectedKey();
+                        var sDestinationID = oDestinationComboBox.getSelectedKey();
+                        var bValid = true;
+
+                        oMaterialComboBox.setValueState("None");
+                        oQuantityInput.setValueState("None");
+                        oOriginComboBox.setValueState("None");
+                        oDestinationComboBox.setValueState("None");
+
+                        if (!sMaterialID) {
+                            oMaterialComboBox.setValueState("Error");
+                            oMaterialComboBox.setValueStateText("Selecione um material da lista.");
+                            bValid = false;
+                        }
+
+                        var sQty = oQuantityInput.getValue().trim();
+                        var iQty = parseInt(sQty, 10);
+                        if (!sQty || isNaN(iQty) || iQty < 1) {
+                            oQuantityInput.setValueState("Error");
+                            oQuantityInput.setValueStateText("Informe uma quantidade maior que zero.");
+                            bValid = false;
+                        }
+
+                        if (bSaida && !sOriginID) {
+                            oOriginComboBox.setValueState("Error");
+                            oOriginComboBox.setValueStateText("Selecione um armazém de origem da lista.");
+                            bValid = false;
+                        } else if (oOriginComboBox.getValue() && !sOriginID) {
+                            oOriginComboBox.setValueState("Error");
+                            oOriginComboBox.setValueStateText("Valor inválido. Selecione um armazém da lista.");
+                            bValid = false;
+                        }
+
+                        var sDestinationText = oDestinationComboBox.getValue().trim();
+                        if (sDestinationText && !sDestinationID) {
+                            oDestinationComboBox.setValueState("Error");
+                            oDestinationComboBox.setValueStateText("Valor inválido. Selecione um armazém da lista.");
+                            bValid = false;
+                        } else if (!bSaida && !sDestinationID) {
+                            oDestinationComboBox.setValueState("Error");
+                            oDestinationComboBox.setValueStateText("Selecione um armazém de destino da lista.");
+                            bValid = false;
+                        }
+
+                        if (!bValid) { return; }
+
+                        var oData = {
+                            type: oTypeSelect.getSelectedKey(),
+                            material_ID: sMaterialID,
+                            quantity: iQty
+                        };
+                        if (sDestinationID && sDestinationID !== EXTERNAL_KEY) {
+                            oData.destinationWarehouse_ID = sDestinationID;
+                        }
+                        if (sOriginID) {
+                            oData.originWarehouse_ID = sOriginID;
+                        }
+                        var sObs = oObservationInput.getValue().trim();
+                        if (sObs) { oData.observation = sObs; }
+
+                        oDialog.setBusy(true);
+                        createMoviment(oData)
+                            .then(function () {
+                                MessageToast.show("Movimentação criada.");
+                                oDialog.close();
+                                refreshAfterCreate(oModel);
+                            }).catch(function (oError) {
+                                MessageBox.error(getMovimentErrorMessage(oError));
+                            }).finally(function () {
+                                oDialog.setBusy(false);
+                            });
+                    }
+                }),
+                endButton: new Button({
+                    text: "Cancelar",
+                    press: function () { oDialog.close(); }
+                }),
+                afterClose: function () { oDialog.destroy(); }
+            });
+
+            oDialog.open();
         },
 
         onCreateMaterial: function (oEvent) {

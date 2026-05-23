@@ -40,6 +40,16 @@ describe('validateNewMoviment', () => {
         assert.deepEqual(errors, []);
     });
 
+    test('Saída válida sem destino (saída para cliente externo)', () => {
+        const errors = validateNewMoviment({
+            type:               TYPE.S,
+            material_ID:        'mat-1',
+            quantity:           5,
+            originWarehouse_ID: 'wh-orig',
+        });
+        assert.deepEqual(errors, []);
+    });
+
     test('Erro: tipo ausente', () => {
         const errors = validateNewMoviment({
             material_ID:             'mat-1',
@@ -97,6 +107,15 @@ describe('validateNewMoviment', () => {
             destinationWarehouse_ID: 'wh-dest',
         });
         assert.ok(errors.some(e => /origem/i.test(e)));
+    });
+
+    test('Erro: entrada sem armazém destino', () => {
+        const errors = validateNewMoviment({
+            type:        TYPE.E,
+            material_ID: 'mat-1',
+            quantity:    5,
+        });
+        assert.ok(errors.some(e => /destino/i.test(e)));
     });
 
     test('Erro: origem e destino iguais', () => {

@@ -26,7 +26,7 @@ function validateNewMoviment(moviment) {
 
     if (!moviment.material_ID) errors.push('Material é obrigatório');
     if (!moviment.quantity || moviment.quantity < 1) errors.push('Quantidade deve ser maior que zero');
-    if (!moviment.destinationWarehouse_ID) errors.push('Armazém destino é obrigatório');
+    if (moviment.type !== TYPE.S && !moviment.destinationWarehouse_ID) errors.push('Armazém destino é obrigatório');
 
     if (moviment.type === TYPE.S && !moviment.originWarehouse_ID) {
         errors.push('Armazém origem é obrigatório para movimentações de Saída');
