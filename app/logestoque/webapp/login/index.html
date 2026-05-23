@@ -5,73 +5,258 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LogEstoque - Login</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --lge-brand:          #0070F2;
+            --lge-brand-hover:    #0064D9;
+            --lge-brand-active:   #0058C0;
+            --lge-bg:             #EFF1F2;
+            --lge-surface:        #FFFFFF;
+            --lge-text-primary:   #1D2D3E;
+            --lge-text-secondary: #556B82;
+            --lge-border-input:   #8696A9;
+            --lge-disabled:       #8696A9;
+            --lge-error-text:     #AA0808;
+            --lge-error-bg:       #FFECEA;
+            --lge-error-border:   #AA0808;
+            --lge-radius:         8px;
+            --lge-radius-input:   4px;
+            --lge-shadow-card:    0 2px 8px 0 rgba(0,0,0,.08), 0 0 1px 0 rgba(0,0,0,.10);
+            --lge-font:           "72", "72full", Arial, Helvetica, sans-serif;
+        }
+
         body {
-            font-family: "72", "72full", Arial, Helvetica, sans-serif;
-            background: #f5f6f7;
+            font-family: var(--lge-font);
+            background-color: var(--lge-bg);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
-        .card {
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 1px 4px rgba(0,0,0,.15);
-            padding: 48px 40px;
-            width: 360px;
+
+        .login-card {
+            background: var(--lge-surface);
+            border-radius: var(--lge-radius);
+            box-shadow: var(--lge-shadow-card);
+            width: 380px;
+            max-width: calc(100vw - 32px);
+            overflow: hidden;
         }
-        h1 { font-size: 1.25rem; font-weight: 700; color: #0a6ed1; margin-bottom: 6px; }
-        .subtitle { font-size: .875rem; color: #6a6d70; margin-bottom: 32px; }
-        label { display: block; font-size: .875rem; color: #32363a; margin-bottom: 6px; }
-        input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #89919a;
-            border-radius: 4px;
-            font-size: .875rem;
-            color: #32363a;
+
+        .login-card::before {
+            content: "";
+            display: block;
+            height: 4px;
+            background: var(--lge-brand);
+        }
+
+        .login-header {
+            padding: 32px 40px 24px;
+            text-align: center;
+            border-bottom: 1px solid #E5E8EB;
+        }
+
+        .login-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            background: #EBF3FE;
+            border-radius: 12px;
             margin-bottom: 16px;
-            outline: none;
         }
-        input:focus { border-color: #0a6ed1; }
-        button {
+
+        .login-logo svg {
+            width: 28px;
+            height: 28px;
+            fill: none;
+            stroke: var(--lge-brand);
+            stroke-width: 1.75;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .login-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--lge-text-primary);
+            letter-spacing: -.01em;
+            margin-bottom: 4px;
+        }
+
+        .login-subtitle {
+            font-size: .8125rem;
+            color: var(--lge-text-secondary);
+            line-height: 1.5;
+        }
+
+        .login-form {
+            padding: 28px 40px 36px;
+        }
+
+        .login-field {
+            margin-bottom: 20px;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: .8125rem;
+            font-weight: 600;
+            color: var(--lge-text-primary);
+            margin-bottom: 6px;
+        }
+
+        .login-field input {
             width: 100%;
-            padding: 10px;
-            background: #0a6ed1;
+            padding: 9px 12px;
+            border: 1px solid var(--lge-border-input);
+            border-radius: var(--lge-radius-input);
+            font-family: var(--lge-font);
+            font-size: .875rem;
+            color: var(--lge-text-primary);
+            background: var(--lge-surface);
+            outline: none;
+            transition: border-color .12s ease, box-shadow .12s ease;
+        }
+
+        .login-field input::placeholder {
+            color: var(--lge-text-secondary);
+            opacity: 1;
+        }
+
+        .login-field input:hover:not(:focus) {
+            border-color: var(--lge-text-secondary);
+        }
+
+        .login-field input:focus {
+            border-color: var(--lge-brand);
+            box-shadow: 0 0 0 2px rgba(0,112,242,.18);
+        }
+
+        .login-btn {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            margin-top: 4px;
+            background: var(--lge-brand);
             color: #fff;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--lge-radius-input);
+            font-family: var(--lge-font);
             font-size: .875rem;
             font-weight: 700;
+            letter-spacing: .01em;
             cursor: pointer;
-            margin-top: 8px;
+            transition: background .12s ease, box-shadow .12s ease;
         }
-        button:hover { background: #085caf; }
-        button:disabled { background: #89919a; cursor: not-allowed; }
-        .error {
+
+        .login-btn:hover:not(:disabled) {
+            background: var(--lge-brand-hover);
+            box-shadow: 0 2px 6px rgba(0,112,242,.28);
+        }
+
+        .login-btn:active:not(:disabled) {
+            background: var(--lge-brand-active);
+            box-shadow: none;
+        }
+
+        .login-btn:disabled {
+            background: var(--lge-disabled);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: .72;
+        }
+
+        .login-error {
             display: none;
-            color: #bb0000;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 10px 12px;
+            background: var(--lge-error-bg);
+            border: 1px solid var(--lge-error-border);
+            border-left: 3px solid var(--lge-error-border);
+            border-radius: var(--lge-radius-input);
+            color: var(--lge-error-text);
             font-size: .8125rem;
-            margin-top: 12px;
-            padding: 8px 12px;
-            background: #fff0f0;
-            border: 1px solid #bb0000;
-            border-radius: 4px;
+            line-height: 1.5;
+        }
+
+        .login-error[style*="block"] {
+            display: flex !important;
+        }
+
+        .login-error::before {
+            content: "";
+            flex-shrink: 0;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-top: 1px;
+            background-color: var(--lge-error-text);
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5L1 13.5h14L8 1.5z' stroke='%23000' stroke-width='1.2' fill='none'/%3E%3Cline x1='8' y1='6' x2='8' y2='9.5' stroke='%23000' stroke-width='1.4' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.2' r='.7' fill='%23000'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5L1 13.5h14L8 1.5z' stroke='%23000' stroke-width='1.2' fill='none'/%3E%3Cline x1='8' y1='6' x2='8' y2='9.5' stroke='%23000' stroke-width='1.4' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.2' r='.7' fill='%23000'/%3E%3C/svg%3E");
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+        }
+
+        .login-footer {
+            margin-top: 24px;
+            font-size: .6875rem;
+            color: var(--lge-text-secondary);
+            opacity: .65;
+            text-align: center;
+            user-select: none;
+        }
+
+        @media (max-width: 480px) {
+            .login-header { padding: 24px 24px 20px; }
+            .login-form   { padding: 20px 24px 28px; }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>LogEstoque</h1>
-        <p class="subtitle">Controle de movimentação de estoque</p>
-        <label for="username">Usuário</label>
-        <input type="text" id="username" autocomplete="username" />
-        <label for="password">Senha</label>
-        <input type="password" id="password" autocomplete="current-password" />
-        <button id="btnLogin">Entrar</button>
-        <div class="error" id="errorMsg"></div>
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M3 9.5L12 4l9 5.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+                    <polyline points="9 21 9 12 15 12 15 21"/>
+                </svg>
+            </div>
+            <h1 class="login-title">LogEstoque</h1>
+            <p class="login-subtitle">Controle de movimentação de estoque</p>
+        </div>
+
+        <div class="login-form">
+            <div class="login-field">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" autocomplete="username" placeholder="Nome de usuário" />
+            </div>
+
+            <div class="login-field">
+                <label for="password">Senha</label>
+                <input type="password" id="password" autocomplete="current-password" placeholder="Senha" />
+            </div>
+
+            <button class="login-btn" id="btnLogin">Entrar</button>
+
+            <div class="login-error" id="errorMsg"></div>
+        </div>
     </div>
+
+    <p class="login-footer">SAP Fiori · LogEstoque</p>
+
     <script>
         // If already authenticated, skip the login page
         if (sessionStorage.getItem('token')) {
