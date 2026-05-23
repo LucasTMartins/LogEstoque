@@ -116,11 +116,6 @@
           "pattern": "Materials:?query:",
           "name": "MaterialsList",
           "target": "MaterialsList"
-        },
-        {
-          "pattern": "Materials({key}):?query:",
-          "name": "MaterialsObjectPage",
-          "target": "MaterialsObjectPage"
         }
       ],
       "targets": {
@@ -176,13 +171,6 @@
             "settings": {
               "contextPath": "/Materials",
               "variantManagement": "None",
-              "navigation": {
-                "Materials": {
-                  "detail": {
-                    "route": "MaterialsObjectPage"
-                  }
-                }
-              },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
@@ -203,16 +191,6 @@
                   }
                 }
               }
-            }
-          }
-        },
-        "MaterialsObjectPage": {
-          "type": "Component",
-          "id": "MaterialsObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "contextPath": "/Materials"
             }
           }
         }

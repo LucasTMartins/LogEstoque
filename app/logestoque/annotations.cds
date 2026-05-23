@@ -374,37 +374,6 @@ annotate service.Materials with @(
             Label: 'Ativo',
         },
     ],
-    UI.FieldGroup #MaterialDetails: {
-        $Type: 'UI.FieldGroupType',
-        Data : [
-            {
-                $Type: 'UI.DataField',
-                Value: code,
-                Label: 'Código',
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: description,
-                Label: 'Descrição',
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: unitMeasure,
-                Label: 'Unidade de Medida',
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: active,
-                Label: 'Ativo',
-            },
-        ],
-    },
-    UI.Facets             : [{
-        $Type : 'UI.ReferenceFacet',
-        ID    : 'MaterialDetailsFacet',
-        Label : 'Detalhes do Material',
-        Target: '@UI.FieldGroup#MaterialDetails',
-    }],
 );
 
 // ─── MovimentByWarehouse — anotações de campos ───────────────────────────────
