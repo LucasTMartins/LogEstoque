@@ -47,6 +47,12 @@ async function loginHandler(req, res) {
     roles,
   });
 
+  res.cookie('auth_token', token, {
+    httpOnly: true,
+    sameSite: 'Lax',
+    path:     '/',
+  });
+
   return res.status(200).json({ token, username: user.username, roles });
 }
 

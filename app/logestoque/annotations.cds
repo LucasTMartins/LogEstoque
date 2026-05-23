@@ -293,6 +293,108 @@ annotate service.Moviments with {
     quantity             @title: 'Quantidade';
 }
 
+// ─── Materials — cadastro de materiais ───────────────────────────────────────
+
+annotate service.Materials with @(
+    Capabilities.InsertRestrictions: { Insertable: true },
+    Capabilities.UpdateRestrictions: { Updatable:  true },
+    Capabilities.DeleteRestrictions: { Deletable:  true },
+);
+
+annotate service.Materials with {
+    ID          @UI.Hidden;
+    code        @title: 'Código';
+    description @title: 'Descrição';
+    unitMeasure @title: 'Unidade de Medida' @(
+        Common.ValueListWithFixedValues: true,
+        Common.ValueList               : {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'UnitMeasuresVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: unitMeasure,
+                    ValueListProperty: 'codigo',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'descricao',
+                },
+            ],
+        },
+    );
+    active      @title: 'Ativo';
+}
+
+annotate service.Materials with @(
+    UI.HeaderInfo         : {
+        TypeName      : 'Material',
+        TypeNamePlural: 'Materiais',
+        Title         : {
+            $Type: 'UI.DataField',
+            Value: code,
+        },
+        Description   : {
+            $Type: 'UI.DataField',
+            Value: description,
+        },
+    },
+    UI.SelectionFields    : [code, description, active],
+    UI.LineItem           : [
+        {
+            $Type: 'UI.DataField',
+            Value: code,
+            Label: 'Código',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: description,
+            Label: 'Descrição',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: unitMeasure,
+            Label: 'Unidade',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: active,
+            Label: 'Ativo',
+        },
+    ],
+    UI.FieldGroup #MaterialDetails: {
+        $Type: 'UI.FieldGroupType',
+        Data : [
+            {
+                $Type: 'UI.DataField',
+                Value: code,
+                Label: 'Código',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: description,
+                Label: 'Descrição',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: unitMeasure,
+                Label: 'Unidade de Medida',
+            },
+            {
+                $Type: 'UI.DataField',
+                Value: active,
+                Label: 'Ativo',
+            },
+        ],
+    },
+    UI.Facets             : [{
+        $Type : 'UI.ReferenceFacet',
+        ID    : 'MaterialDetailsFacet',
+        Label : 'Detalhes do Material',
+        Target: '@UI.FieldGroup#MaterialDetails',
+    }],
+);
+
 // ─── MovimentByWarehouse — anotações de campos ───────────────────────────────
 
 annotate service.MovimentByWarehouse with {

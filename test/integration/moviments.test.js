@@ -27,9 +27,9 @@ before(async () => {
     assert.equal(loginRes.status, 200, 'Login deve retornar 200');
     http.defaults.headers.common['Authorization'] = `Bearer ${loginRes.data.token}`;
 
-    // Buscar IDs de seed data
-    const matRes = await http.get(`${BASE}/Materials?$top=1`);
-    const whRes  = await http.get(`${BASE}/Warehouses?$top=1`);
+    // Buscar IDs de seed data (apenas ativos para respeitar as novas validações)
+    const matRes = await http.get(`${BASE}/Materials?$filter=active eq true&$orderby=code asc&$top=1`);
+    const whRes  = await http.get(`${BASE}/Warehouses?$filter=active eq true&$top=1`);
     material_ID  = matRes.data.value[0].ID;
     warehouse_ID = whRes.data.value[0].ID;
 });
@@ -179,4 +179,92 @@ test('não pode concluir movimentação pendente sem aprovar antes', async () =>
         () => POST(`${BASE}/Moviments(${mov.ID})/MainService.conclude`, {}),
         (err) => { assert.ok(err.response?.status >= 400); return true; }
     );
+});
+
+// ─── Validações na criação (Feature 2) ────────────────────────────────────────
+
+// Seed conhecidos:
+// MAT-001 (ativo) tem estoque de 15 unidades em W001 (ativo)
+// W002 é inativo
+// W003 é ativo mas não tem estoque de MAT-001
+
+const MAT_001 = '20157005-d245-412e-bbef-ba3d5f84d175';
+const W001    = '11915179-3453-42ad-84c8-5c859edf99de';
+const W002    = '11915180-6360-4d6a-85ea-c77d43ef4ecf';
+const W003    = '5ee836ef-74ab-4639-84eb-57ebd81b894f';
+const MAT_002 = '16064985-ec0b-4f0c-99a8-17b3bc0e0e1e'; // inativo
+
+test('rejeita Saída quando não há estoque do material no armazém de origem', async () => {
+    await assert.rejects(
+        () => POST(`${BASE}/Moviments`, {
+            type:                    'S',
+            material_ID:             MAT_001,
+            quantity:                1,
+            originWarehouse_ID:      W003,      // W003 ativo mas sem estoque de MAT-001
+            destinationWarehouse_ID: W001,
+        }),
+        (err) => {
+            assert.ok(err.response?.status === 409, `esperado 409, recebido ${err.response?.status}`);
+            return true;
+        }
+    );
+});
+
+test('rejeita Saída quando quantidade excede estoque disponível', async () => {
+    await assert.rejects(
+        () => POST(`${BASE}/Moviments`, {
+            type:                    'S',
+            material_ID:             MAT_001,
+            quantity:                9999,      // MAT-001 em W001 tem apenas 15
+            originWarehouse_ID:      W001,
+            destinationWarehouse_ID: W003,
+        }),
+        (err) => {
+            assert.ok(err.response?.status === 409, `esperado 409, recebido ${err.response?.status}`);
+            return true;
+        }
+    );
+});
+
+test('rejeita movimentação com armazém de origem inativo', async () => {
+    await assert.rejects(
+        () => POST(`${BASE}/Moviments`, {
+            type:                    'S',
+            material_ID:             MAT_001,
+            quantity:                1,
+            originWarehouse_ID:      W002,      // W002 inativo
+            destinationWarehouse_ID: W003,
+        }),
+        (err) => {
+            assert.ok(err.response?.status === 422, `esperado 422, recebido ${err.response?.status}`);
+            return true;
+        }
+    );
+});
+
+test('rejeita movimentação com material inativo', async () => {
+    await assert.rejects(
+        () => POST(`${BASE}/Moviments`, {
+            type:                    'E',
+            material_ID:             MAT_002,   // MAT-002 inativo
+            quantity:                1,
+            destinationWarehouse_ID: W001,
+        }),
+        (err) => {
+            assert.ok(err.response?.status === 422, `esperado 422, recebido ${err.response?.status}`);
+            return true;
+        }
+    );
+});
+
+test('cria Saída com estoque suficiente (quantidade exata)', async () => {
+    const res = await POST(`${BASE}/Moviments`, {
+        type:                    'S',
+        material_ID:             MAT_001,
+        quantity:                15,            // exatamente o disponível
+        originWarehouse_ID:      W001,
+        destinationWarehouse_ID: W003,
+    });
+    assert.equal(res.data.status, 'P');
+    assert.equal(res.data.type, 'S');
 });

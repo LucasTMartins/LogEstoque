@@ -46,13 +46,27 @@ service MainService @(requires: 'authenticated-user') {
             active    as ativo
     };
 
-    // Value helps (somente leitura)
-    @readonly entity Materials  as projection on masterdata.Materials {
+    // Cadastro de materiais — leitura para todos, escrita para ESTOQUE e ADMIN
+    @(restrict: [
+        { grant: ['READ'],                       to: 'authenticated-user'   },
+        { grant: ['CREATE', 'UPDATE', 'DELETE'], to: ['ESTOQUE', 'ADMIN']   },
+    ])
+    entity Materials as projection on masterdata.Materials {
         key ID,
             code,
             description,
             unitMeasure,
-            active
+            @mandatory: false  active  // handler defaults to true; validation at DB level
+    };
+
+    @readonly entity UnitMeasuresVH {
+        key codigo   : String(5);
+            descricao: String(50);
+    };
+
+    @readonly entity CurrentUser {
+        key dummy              : String(1);
+            canManageMaterials : Boolean;
     };
 
     @readonly entity Warehouses as projection on masterdata.Warehouses {

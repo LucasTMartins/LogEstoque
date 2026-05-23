@@ -8,17 +8,98 @@ module.exports = class MainService extends cds.ApplicationService {
     async init() {
 
         const { Moviments, Stocks, StockHistory } = cds.entities('db.inventory');
-        const { Warehouses }                      = cds.entities('db.masterdata');
+        const { Warehouses, Materials }           = cds.entities('db.masterdata');
+
+        // ── Cadastro de materiais ───────────────────────────────────────────
+
+        this.before('CREATE', 'Materials', (req) => {
+            if (req.data.active === undefined || req.data.active === null)
+                req.data.active = true;
+        });
+
+        this.on('DELETE', 'Materials', async (req) => {
+            const { ID } = req.params[0];
+            const material = await SELECT.one.from(Materials).where({ ID });
+            if (!material) return req.error(404, 'Material não encontrado');
+            await UPDATE(Materials).set({ active: false }).where({ ID });
+            return req.reply();
+        });
+
+        // ── Value help de unidades de medida ───────────────────────────────
+
+        const UNIT_MEASURES = [
+            { codigo: 'UN',  descricao: 'Unidade'        },
+            { codigo: 'KG',  descricao: 'Quilograma'      },
+            { codigo: 'M',   descricao: 'Metro'           },
+            { codigo: 'L',   descricao: 'Litro'           },
+            { codigo: 'PC',  descricao: 'Peça'            },
+            { codigo: 'CX',  descricao: 'Caixa'           },
+            { codigo: 'PCT', descricao: 'Pacote'          },
+            { codigo: 'MT',  descricao: 'Metro'           },
+            { codigo: 'M2',  descricao: 'Metro Quadrado'  },
+            { codigo: 'M3',  descricao: 'Metro Cúbico'    },
+            { codigo: 'LT',  descricao: 'Litro'           },
+            { codigo: 'ML',  descricao: 'Mililitro'       },
+            { codigo: 'G',   descricao: 'Grama'           },
+            { codigo: 'T',   descricao: 'Tonelada'        },
+            { codigo: 'SC',  descricao: 'Saco'            },
+            { codigo: 'FD',  descricao: 'Fardo'           },
+            { codigo: 'BL',  descricao: 'Bloco'           },
+            { codigo: 'GL',  descricao: 'Galão'           },
+            { codigo: 'PAR', descricao: 'Par'             },
+            { codigo: 'RL',  descricao: 'Rolo'            },
+            { codigo: 'CP',  descricao: 'Corpo'           },
+            { codigo: 'FRD', descricao: 'Fardo'           },
+            { codigo: 'BRT', descricao: 'Bruto'           },
+            { codigo: 'DZ',  descricao: 'Dúzia'           },
+            { codigo: 'CJS', descricao: 'Conjunto'        },
+            { codigo: 'PRC', descricao: 'Porção'          },
+            { codigo: 'TD',  descricao: 'Todo'            },
+            { codigo: 'RES', descricao: 'Resma'           },
+            { codigo: 'TP',  descricao: 'Tipo'            },
+            { codigo: 'JG',  descricao: 'Jogo'            },
+        ];
+
+        this.on('READ', 'UnitMeasuresVH', () => UNIT_MEASURES);
+
+        this.on('READ', 'CurrentUser', (req) => {
+            const roles = req.user?.roles ?? [];
+            return [{ dummy: '1', canManageMaterials: roles.includes('ESTOQUE') || roles.includes('ADMIN') }];
+        });
 
         // ── Criação de movimentação ─────────────────────────────────────────
 
-        this.before('CREATE', 'Moviments', (req) => {
+        this.before('CREATE', 'Moviments', async (req) => {
             const data   = req.data;
             const errors = rules.validateNewMoviment(data);
             if (errors.length > 0) return req.error(400, errors.join('; '));
 
             // Status inicial sempre Pendente — usuário não pode definir
             req.data.status = rules.STATUS.P;
+
+            // Material deve existir e estar ativo
+            const material = await SELECT.one.from(Materials).where({ ID: data.material_ID });
+            const matErr   = rules.validateMaterialActive(material);
+            if (matErr) return req.error(422, matErr);
+
+            // Armazém destino deve estar ativo
+            const destWh  = await SELECT.one.from(Warehouses).where({ ID: data.destinationWarehouse_ID });
+            const destErr = rules.validateWarehouseActive(destWh, 'destino');
+            if (destErr) return req.error(422, destErr);
+
+            // Para Saída: armazém origem ativo + estoque suficiente pré-existente
+            if (data.type === rules.TYPE.S) {
+                const origWh  = await SELECT.one.from(Warehouses).where({ ID: data.originWarehouse_ID });
+                const origErr = rules.validateWarehouseActive(origWh, 'origem');
+                if (origErr) return req.error(422, origErr);
+
+                const stock    = await SELECT.one.from(Stocks).where({
+                    material_ID:  data.material_ID,
+                    warehouse_ID: data.originWarehouse_ID,
+                });
+                const stockErr = rules.validateStockForSaida(stock, data.quantity);
+                if (stockErr) return req.error(409, stockErr);
+            }
         });
 
         // ── Ação: Aprovar ───────────────────────────────────────────────────

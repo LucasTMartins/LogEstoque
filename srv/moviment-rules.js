@@ -84,6 +84,43 @@ function checkWarehouseCapacity(warehouseID, quantity, stocks, warehouses) {
     return currentTotal + quantity <= warehouse.capacity;
 }
 
+/**
+ * Verifica se o material está ativo.
+ * @param {object|null} material - Registro de material fetched do DB (ou null)
+ * @returns {string|null} Mensagem de erro, ou null se válido
+ */
+function validateMaterialActive(material) {
+    if (!material) return 'Material não encontrado';
+    if (!material.active) return 'Material inativo não pode ser movimentado';
+    return null;
+}
+
+/**
+ * Verifica se um armazém está ativo.
+ * @param {object|null} warehouse - Registro de armazém fetched do DB (ou null)
+ * @param {string} role - 'origem' ou 'destino' (usado na mensagem de erro)
+ * @returns {string|null} Mensagem de erro, ou null se válido
+ */
+function validateWarehouseActive(warehouse, role) {
+    if (!warehouse) return `Armazém de ${role} não encontrado`;
+    if (!warehouse.active) return `Armazém de ${role} está inativo`;
+    return null;
+}
+
+/**
+ * Verifica se há estoque suficiente para uma Saída no momento da criação.
+ * Recebe um único registro de estoque (ou null) já filtrado por material+armazém.
+ * @param {object|null} stock    - Registro de estoque { quantity } ou null
+ * @param {number}      quantity - Quantidade solicitada
+ * @returns {string|null} Mensagem de erro, ou null se válido
+ */
+function validateStockForSaida(stock, quantity) {
+    if (!stock) return 'Não existe estoque para este material no armazém de origem';
+    if (stock.quantity < quantity)
+        return `Estoque insuficiente: disponível ${stock.quantity}, solicitado ${quantity}`;
+    return null;
+}
+
 module.exports = {
     STATUS,
     TYPE,
@@ -91,4 +128,7 @@ module.exports = {
     validateStatusTransition,
     checkStockAvailability,
     checkWarehouseCapacity,
+    validateMaterialActive,
+    validateWarehouseActive,
+    validateStockForSaida,
 };

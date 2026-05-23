@@ -44,6 +44,15 @@
   },
   "sap.ui5": {
     "flexEnabled": true,
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::MovimentsList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MovimentsListController"
+          }
+        }
+      }
+    },
     "dependencies": {
       "minUI5Version": "1.148.0",
       "libs": {
@@ -75,6 +84,10 @@
       "@i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "uri": "i18n/i18n.properties"
+      },
+      "userPerms": {
+        "type": "sap.ui.model.json.JSONModel",
+        "uri": "model/userPerms.json"
       }
     },
     "resources": {
@@ -92,6 +105,16 @@
           "pattern": "Moviments({key}):?query:",
           "name": "MovimentsObjectPage",
           "target": "MovimentsObjectPage"
+        },
+        {
+          "pattern": "Materials:?query:",
+          "name": "MaterialsList",
+          "target": "MaterialsList"
+        },
+        {
+          "pattern": "Materials({key}):?query:",
+          "name": "MaterialsObjectPage",
+          "target": "MaterialsObjectPage"
         }
       ],
       "targets": {
@@ -102,12 +125,55 @@
           "options": {
             "settings": {
               "contextPath": "/Moviments",
-              "useSemanticDateRange": false,
               "variantManagement": "Page",
               "navigation": {
                 "Moviments": {
                   "detail": {
                     "route": "MovimentsObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Multi"
+                  },
+                  "actions": {
+                    "ManageMaterials": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageMaterials",
+                      "text": "Gerenciar Materiais",
+                      "visible": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "MovimentsObjectPage": {
+          "type": "Component",
+          "id": "MovimentsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/Moviments"
+            }
+          }
+        },
+        "MaterialsList": {
+          "type": "Component",
+          "id": "MaterialsList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Materials",
+              "variantManagement": "Page",
+              "navigation": {
+                "Materials": {
+                  "detail": {
+                    "route": "MaterialsObjectPage"
                   }
                 }
               },
@@ -122,13 +188,13 @@
             }
           }
         },
-        "MovimentsObjectPage": {
+        "MaterialsObjectPage": {
           "type": "Component",
-          "id": "MovimentsObjectPage",
+          "id": "MaterialsObjectPage",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "contextPath": "/Moviments"
+              "contextPath": "/Materials"
             }
           }
         }
