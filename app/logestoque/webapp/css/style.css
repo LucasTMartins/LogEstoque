@@ -17,3 +17,7 @@
 .sapFDynamicPageTitle .sapFDynamicPageTitleActionsBar.sapMTB {
     justify-content: flex-start;
 }
+
+.sapFDynamicPageTitleMainHeading .sapUiSelectable {
+    color: #217dea;
+}
