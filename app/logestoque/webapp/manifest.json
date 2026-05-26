@@ -195,6 +195,12 @@
                       "text": "Novo Material",
                       "visible": "{userPerms>/canManageMaterials}",
                       "requiresSelection": false
+                    },
+                    "EditDescription": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onEditDescription",
+                      "text": "Editar Descrição",
+                      "visible": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": true
                     }
                   }
                 }

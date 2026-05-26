@@ -57,6 +57,7 @@ service MainService @(requires: 'authenticated-user') {
         { grant: ['READ'],                       to: 'authenticated-user'   },
         { grant: ['CREATE', 'UPDATE'],           to: ['ESTOQUE', 'ADMIN']   },
         { grant: ['DELETE'],                     to: 'authenticated-user'   },
+        { grant: ['toggleActive'],               to: ['ESTOQUE', 'ADMIN']   },
     ])
     entity Materials as projection on masterdata.Materials {
         key ID,
@@ -64,6 +65,8 @@ service MainService @(requires: 'authenticated-user') {
             description,
             unitMeasure,
             @mandatory: false  active  // handler defaults to true; validation at DB level
+    } actions {
+        action toggleActive() returns Materials;
     };
 
     @readonly entity UnitMeasuresVH {

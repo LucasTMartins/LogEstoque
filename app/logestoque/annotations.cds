@@ -373,6 +373,11 @@ annotate service.Materials with @(
             Value: active,
             Label: 'Ativo',
         },
+        {
+            $Type : 'UI.DataFieldForAction',
+            Action: 'MainService.toggleActive',
+            Label : 'Ativar/Desativar',
+        },
     ],
 );
 

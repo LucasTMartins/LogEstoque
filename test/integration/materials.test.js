@@ -112,9 +112,9 @@ test('rejeita código duplicado', async () => {
     );
 });
 
-// ─── Soft Delete ──────────────────────────────────────────────────────────────
+// ─── Delete ───────────────────────────────────────────────────────────────────
 
-test('DELETE marca material como inativo (soft delete)', async () => {
+test('DELETE remove material sem vínculos fisicamente do banco', async () => {
     const created = await POST(`${BASE}/Materials`, {
         code:        'TST-DEL',
         description: 'Para Deletar',
@@ -124,14 +124,20 @@ test('DELETE marca material como inativo (soft delete)', async () => {
 
     await DELETE(`${BASE}/Materials(${id})`);
 
-    // Verificar diretamente no banco que o registro ainda existe mas está inativo
+    // Material sem vínculos é removido fisicamente — não deve mais existir
     const db  = await cds.connect.to('db');
     const SYS = new cds.User.Privileged();
     const mat = await db.tx({ user: SYS }, tx =>
         tx.run(SELECT.one.from('db.masterdata.Materials').where({ ID: id }))
     );
-    assert.ok(mat, 'material deve ainda existir no banco');
-    assert.equal(mat.active, false, 'material deve estar marcado como inativo');
+    assert.ok(!mat, 'material não deve mais existir no banco após exclusão');
+});
+
+test('DELETE em material em uso retorna 409', async () => {
+    // MAT-001 (20157005-...) tem estoques e movimentações no seed
+    const MAT_001 = '20157005-d245-412e-bbef-ba3d5f84d175';
+    const res = await http.delete(`${BASE}/Materials(${MAT_001})`);
+    assert.equal(res.status, 409, 'deve retornar 409 para material em uso');
 });
 
 test('DELETE em material inexistente retorna 404', async () => {
@@ -160,6 +166,46 @@ test('DELETE sem permissão retorna mensagem de negócio', async () => {
         JSON.stringify(res.data),
         /Você não tem permissão para excluir materiais/
     );
+});
+
+// ─── Ativar/Desativar ─────────────────────────────────────────────────────────
+
+test('toggleActive alterna active de true para false e vice-versa', async () => {
+    const created = await POST(`${BASE}/Materials`, {
+        code:        'TST-TOGGLE',
+        description: 'Material para Toggle',
+        unitMeasure: 'UN',
+    });
+    const id = created.data.ID;
+    assert.equal(created.data.active, true, 'criado como ativo por padrão');
+
+    // Desativar
+    const off = await http.post(`${BASE}/Materials(${id})/MainService.toggleActive`, {});
+    assert.equal(off.status, 200);
+    assert.equal(off.data.active, false, 'deve estar inativo após primeiro toggle');
+
+    // Reativar
+    const on = await http.post(`${BASE}/Materials(${id})/MainService.toggleActive`, {});
+    assert.equal(on.status, 200);
+    assert.equal(on.data.active, true, 'deve estar ativo após segundo toggle');
+});
+
+test('toggleActive sem permissão retorna 403', async () => {
+    const created = await POST(`${BASE}/Materials`, {
+        code:        'TST-TOGGLE-NOAUTH',
+        description: 'Material Toggle Sem Permissão',
+        unitMeasure: 'UN',
+    });
+    const id = created.data.ID;
+    const estoqueAuth = http.defaults.headers.common.Authorization;
+
+    const loginRes = await http.post('/auth/login', { username: 'pedro.alves', password: 'pass-01' });
+    http.defaults.headers.common.Authorization = `Bearer ${loginRes.data.token}`;
+
+    const res = await http.post(`${BASE}/Materials(${id})/MainService.toggleActive`, {});
+    http.defaults.headers.common.Authorization = estoqueAuth;
+
+    assert.equal(res.status, 403);
 });
 
 // ─── Atualização ──────────────────────────────────────────────────────────────

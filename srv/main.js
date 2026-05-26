@@ -33,8 +33,26 @@ module.exports = class MainService extends cds.ApplicationService {
             const { ID } = req.params[0];
             const material = await SELECT.one.from(Materials).where({ ID });
             if (!material) return req.error(404, 'Material não encontrado');
-            await UPDATE(Materials).set({ active: false }).where({ ID });
+
+            const stockExists    = await SELECT.one.from(Stocks).where({ material_ID: ID });
+            const movimentExists = await SELECT.one.from(Moviments).where({ material_ID: ID });
+            if (stockExists || movimentExists) {
+                return req.error(409, 'Este material está em uso (possui estoques ou movimentações) e não pode ser excluído.');
+            }
+
+            await DELETE.from(Materials).where({ ID });
             return req.reply();
+        });
+
+        this.on('toggleActive', 'Materials', async (req) => {
+            if (!canManageMaterials(req)) {
+                return req.error(403, 'Você não tem permissão para ativar/desativar materiais.');
+            }
+            const { ID } = req.params[0];
+            const material = await SELECT.one.from(Materials).where({ ID });
+            if (!material) return req.error(404, 'Material não encontrado.');
+            await UPDATE(Materials).set({ active: !material.active }).where({ ID });
+            return SELECT.one.from(Materials).where({ ID });
         });
 
         // ── Value help de unidades de medida ───────────────────────────────

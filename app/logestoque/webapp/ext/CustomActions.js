@@ -254,6 +254,36 @@ sap.ui.define([
         }
     }
 
+    function getParentTable(oControl) {
+        var oCurrent = oControl;
+        while (oCurrent) {
+            if (oCurrent.isA && (
+                oCurrent.isA("sap.ui.mdc.Table") ||
+                oCurrent.isA("sap.m.Table") ||
+                oCurrent.isA("sap.ui.table.Table")
+            )) {
+                return oCurrent;
+            }
+            oCurrent = oCurrent.getParent ? oCurrent.getParent() : null;
+        }
+        return null;
+    }
+
+    function getSelectedContexts(oTable) {
+        if (!oTable) { return []; }
+        // sap.ui.mdc.Table (FE v4)
+        if (oTable.getSelectedContexts) {
+            return oTable.getSelectedContexts();
+        }
+        // sap.m.Table fallback
+        if (oTable.getSelectedItems) {
+            return oTable.getSelectedItems()
+                .map(function (oItem) { return oItem.getBindingContext(); })
+                .filter(Boolean);
+        }
+        return [];
+    }
+
     function createMaterial(oModel, oData) {
         var oListBinding = oModel.bindList("/Materials");
         var oContext = oListBinding.create(oData);
@@ -503,6 +533,141 @@ sap.ui.define([
                             }).finally(function () {
                                 oDialog.setBusy(false);
                             });
+                    }
+                }),
+                endButton: new Button({
+                    text: "Cancelar",
+                    press: function () { oDialog.close(); }
+                }),
+                afterClose: function () { oDialog.destroy(); }
+            });
+
+            oDialog.open();
+        },
+
+        onEditDescription: function (oEvent) {
+            var oModel = getDefaultModel(this, oEvent);
+
+            if (!oModel) {
+                MessageBox.error("Não foi possível acessar o modelo de dados.");
+                return;
+            }
+
+            // Resolve selected contexts — three strategies in order
+            var aContexts = [];
+
+            // 1. FE v4: get table by standard ID via base controller
+            if (!aContexts.length && this.base && this.base.byId) {
+                var oTableById = this.base.byId("fe::table::Materials::LineItem");
+                if (oTableById && oTableById.getSelectedContexts) {
+                    aContexts = oTableById.getSelectedContexts() || [];
+                }
+            }
+
+            // 2. Traverse parent chain from the pressed button
+            if (!aContexts.length) {
+                aContexts = getSelectedContexts(getParentTable(getSource(oEvent)));
+            }
+
+            // 3. Search the global UI5 element registry for any MDC table with a selection
+            if (!aContexts.length) {
+                try {
+                    sap.ui.core.Element.registry.forEach(function (oEl) {
+                        if (!aContexts.length && oEl.isA && oEl.isA("sap.ui.mdc.Table") && oEl.getSelectedContexts) {
+                            var aFound = oEl.getSelectedContexts();
+                            if (aFound && aFound.length) {
+                                aContexts = aFound;
+                            }
+                        }
+                    });
+                } catch (e) { /* ignore */ }
+            }
+
+            if (!aContexts.length) {
+                MessageBox.warning("Selecione um material para editar a descrição.");
+                return;
+            }
+
+            var oCtx = aContexts[0];
+
+            // Extract ID from binding context path (/Materials(uuid) or /Materials('uuid'))
+            var sPath = oCtx && oCtx.getPath ? oCtx.getPath() : "";
+            var oPathMatch = sPath.match(/Materials\(([^)]+)\)/);
+            var sId = oPathMatch ? oPathMatch[1].replace(/['"]/g, "") : null;
+
+            var oMaterial = oCtx ? oCtx.getObject() : null;
+            if (!sId && oMaterial) { sId = oMaterial.ID; }
+
+            if (!sId) {
+                MessageBox.error("Não foi possível identificar o material selecionado.");
+                return;
+            }
+
+            // If description isn't in the context cache, fetch it
+            var sCurrentDescription = (oMaterial && oMaterial.description) || "";
+            var sCode = (oMaterial && oMaterial.code) || sId;
+            var oDescriptionInput = new Input({
+                value: sCurrentDescription,
+                width: "100%",
+                placeholder: "Descrição do material"
+            });
+
+            var oDialog = new Dialog({
+                title: "Editar Descrição — " + sCode,
+                contentWidth: "28rem",
+                content: new VBox({
+                    width: "100%",
+                    renderType: "Bare",
+                    items: [
+                        createLabel("Descrição"),
+                        oDescriptionInput
+                    ]
+                }).addStyleClass("sapUiSmallMargin"),
+                beginButton: new Button({
+                    text: "Salvar",
+                    type: "Emphasized",
+                    press: function () {
+                        var sDescription = oDescriptionInput.getValue().trim();
+                        oDescriptionInput.setValueState("None");
+
+                        if (!sDescription) {
+                            oDescriptionInput.setValueState("Error");
+                            oDescriptionInput.setValueStateText("Descrição é obrigatória.");
+                            return;
+                        }
+
+                        oDialog.setBusy(true);
+                        fetch("/odata/v4/main/Materials(" + sId + ")", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ description: sDescription })
+                        }).then(function (r) {
+                            if (!r.ok) {
+                                return r.json().then(function (oJson) {
+                                    var oErr = new Error(String(r.status));
+                                    oErr.status = r.status;
+                                    oErr.responseText = JSON.stringify(oJson);
+                                    throw oErr;
+                                });
+                            }
+                            return r.json();
+                        }).then(function () {
+                            MessageToast.show("Descrição atualizada.");
+                            oDialog.close();
+                            refreshAfterCreate(oModel);
+                        }).catch(function (oError) {
+                            var iStatus = Number(getStatus(oError));
+                            var sMsg = getBackendErrorMessage(oError);
+                            if (iStatus === 403) {
+                                MessageBox.error("Você não tem permissão para editar materiais. Solicite a alteração à área.");
+                            } else if (sMsg && !isGenericHttpMessage(sMsg)) {
+                                MessageBox.error(sMsg);
+                            } else {
+                                MessageBox.error("Não foi possível atualizar a descrição.");
+                            }
+                        }).finally(function () {
+                            oDialog.setBusy(false);
+                        });
                     }
                 }),
                 endButton: new Button({
