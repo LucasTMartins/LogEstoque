@@ -339,6 +339,16 @@ annotate service.Materials with {
 }
 
 annotate service.Materials with @(
+    UI.SelectionVariant: {
+        SelectOptions: [{
+            PropertyName: active,
+            Ranges: [{
+                Sign  : #Include,
+                Option: #EQ,
+                Low   : true
+            }]
+        }]
+    },
     UI.HeaderInfo         : {
         TypeName      : 'Material',
         TypeNamePlural: 'Materiais',
