@@ -128,12 +128,26 @@ annotate service.Moviments with @(
             },
         ],
     },
-    UI.Facets             : [{
-        $Type : 'UI.ReferenceFacet',
-        ID    : 'DetailsFacet',
-        Label : 'Detalhes da Movimentação',
-        Target: '@UI.FieldGroup#Details',
-    }],
+    UI.Facets             : [
+        {
+            $Type : 'UI.ReferenceFacet',
+            ID    : 'DetailsFacet',
+            Label : 'Detalhes da Movimentação',
+            Target: '@UI.FieldGroup#Details',
+        },
+        {
+            $Type : 'UI.ReferenceFacet',
+            ID    : 'OriginHistoryFacet',
+            Label : 'Histórico — Depósito de Origem',
+            Target: 'originHistory/@UI.LineItem',
+        },
+        {
+            $Type : 'UI.ReferenceFacet',
+            ID    : 'DestinationHistoryFacet',
+            Label : 'Histórico — Depósito de Destino',
+            Target: 'destinationHistory/@UI.LineItem',
+        },
+    ],
 );
 
 // Value helps e textos para associações em Moviments
@@ -654,3 +668,125 @@ annotate service.MovimentDetail with @(UI.LineItem: [
         Value: currentQuantity,
     },
 ], );
+
+// ─── OriginStockHistory / DestinationStockHistory — histórico de estoque ─────
+
+annotate service.OriginStockHistory with @UI.SelectionFields: [createdAt];
+
+annotate service.OriginStockHistory with {
+    moviment_ID     @UI.Hidden;
+    ID              @UI.Hidden;
+    createdAt       @title: 'Data' @odata.Type: 'Edm.Date' @UI.HiddenFilter: false @UI.Hidden: true;
+    createdDate     @title: 'Data';
+    createdTime     @title: 'Hora';
+    warehouseCode   @title: 'Cód. Depósito';
+    warehouseName   @title: 'Depósito';
+    materialCode    @title: 'Material';
+    materialDescription @title: 'Descrição';
+    unitMeasure     @title: 'UM';
+    lastQuantity    @title: 'Qtd. Anterior';
+    currentQuantity @title: 'Qtd. Atual';
+}
+
+annotate service.OriginStockHistory with @(UI.LineItem: [
+    {
+        $Type: 'UI.DataField',
+        Value: createdDate,
+        Label: 'Data',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: createdTime,
+        Label: 'Hora',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseCode,
+        Label: 'Cód. Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseName,
+        Label: 'Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: materialCode,
+        Label: 'Material',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: unitMeasure,
+        Label: 'UM',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: lastQuantity,
+        Label: 'Qtd. Anterior',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: currentQuantity,
+        Label: 'Qtd. Atual',
+    },
+]);
+
+annotate service.DestinationStockHistory with @UI.SelectionFields: [createdAt];
+
+annotate service.DestinationStockHistory with {
+    moviment_ID     @UI.Hidden;
+    ID              @UI.Hidden;
+    createdAt       @title: 'Data' @odata.Type: 'Edm.Date' @UI.HiddenFilter: false @UI.Hidden: true;
+    createdDate     @title: 'Data';
+    createdTime     @title: 'Hora';
+    warehouseCode   @title: 'Cód. Depósito';
+    warehouseName   @title: 'Depósito';
+    materialCode    @title: 'Material';
+    materialDescription @title: 'Descrição';
+    unitMeasure     @title: 'UM';
+    lastQuantity    @title: 'Qtd. Anterior';
+    currentQuantity @title: 'Qtd. Atual';
+}
+
+annotate service.DestinationStockHistory with @(UI.LineItem: [
+    {
+        $Type: 'UI.DataField',
+        Value: createdDate,
+        Label: 'Data',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: createdTime,
+        Label: 'Hora',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseCode,
+        Label: 'Cód. Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseName,
+        Label: 'Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: materialCode,
+        Label: 'Material',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: unitMeasure,
+        Label: 'UM',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: lastQuantity,
+        Label: 'Qtd. Anterior',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: currentQuantity,
+        Label: 'Qtd. Atual',
+    },
+]);

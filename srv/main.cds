@@ -27,7 +27,9 @@ service MainService @(requires: 'authenticated-user') {
             when 'E' then 'Entrada'
             when 'S' then 'Saída'
             else type
-        end as typeLabel : String
+        end as typeLabel : String,
+        originHistory     : Composition of many OriginStockHistory      on originHistory.moviment_ID      = ID,
+        destinationHistory: Composition of many DestinationStockHistory on destinationHistory.moviment_ID = ID
     } actions {
         action approve()                                          returns Moviments;
         action rejectMoviment(@mandatory reason : String(500))    returns Moviments;
@@ -141,4 +143,36 @@ service MainService @(requires: 'authenticated-user') {
             moviment.status            as status,
             moviment.observation       as observation
     };
+
+    @readonly @cds.persistence.skip
+    entity OriginStockHistory {
+        key moviment_ID     : UUID;
+        key ID              : UUID;
+            warehouseCode   : String(10);
+            warehouseName   : String(100);
+            materialCode    : String(40);
+            materialDescription : String(200);
+            unitMeasure     : String(10);
+            lastQuantity    : Integer;
+            currentQuantity : Integer;
+            createdAt       : Timestamp;
+            createdDate     : String(10);
+            createdTime     : String(5);
+    }
+
+    @readonly @cds.persistence.skip
+    entity DestinationStockHistory {
+        key moviment_ID     : UUID;
+        key ID              : UUID;
+            warehouseCode   : String(10);
+            warehouseName   : String(100);
+            materialCode    : String(40);
+            materialDescription : String(200);
+            unitMeasure     : String(10);
+            lastQuantity    : Integer;
+            currentQuantity : Integer;
+            createdAt       : Timestamp;
+            createdDate     : String(10);
+            createdTime     : String(5);
+    }
 }

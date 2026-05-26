@@ -292,6 +292,16 @@ module.exports = class MainService extends cds.ApplicationService {
             });
         });
 
+        // ── Histórico de estoque por depósito de origem/destino ────────────
+
+        this.on('READ', 'OriginStockHistory', (req) =>
+            _getWarehouseHistory(Moviments, Stocks, Warehouses, Materials, StockHistory, req, 'originWarehouse_ID')
+        );
+
+        this.on('READ', 'DestinationStockHistory', (req) =>
+            _getWarehouseHistory(Moviments, Stocks, Warehouses, Materials, StockHistory, req, 'destinationWarehouse_ID')
+        );
+
         await super.init();
     }
 
@@ -332,6 +342,116 @@ function _expandDateFilters(where) {
         }
     }
     return out;
+}
+
+// ── Funções auxiliares: histórico de estoque por depósito ─────────────────────
+
+async function _getWarehouseHistory(Moviments, Stocks, Warehouses, Materials, StockHistory, req, warehouseField) {
+    const moviment_ID = _extractMovimentId(req);
+    if (!moviment_ID) return [];
+
+    const moviment = await SELECT.one
+        .from(Moviments)
+        .columns('material_ID', 'originWarehouse_ID', 'destinationWarehouse_ID')
+        .where({ ID: moviment_ID });
+    if (!moviment) return [];
+
+    const warehouse_ID = moviment[warehouseField];
+    if (!warehouse_ID) return [];
+
+    const stocks = await SELECT.from(Stocks).columns('ID').where({ material_ID: moviment.material_ID, warehouse_ID });
+    if (!stocks.length) return [];
+
+    const stock_IDs = stocks.map(s => s.ID);
+
+    const q = SELECT.from(StockHistory)
+        .where({ stock_ID: { in: stock_IDs } })
+        .orderBy('createdAt desc');
+
+    // Aplica filtro de data vindo da barra de filtros do Fiori Elements
+    const userWhere = req.query?.SELECT?.where;
+    if (userWhere?.length) {
+        const dateWhere = _expandDateFilters(userWhere);
+        if (Array.isArray(q.SELECT.where)) {
+            q.SELECT.where = [...q.SELECT.where, 'and', ...dateWhere];
+        }
+    }
+
+    const history = await q;
+    if (!history.length) return [];
+
+    const [warehouse, material] = await Promise.all([
+        SELECT.one.from(Warehouses).where({ ID: warehouse_ID }),
+        SELECT.one.from(Materials).where({ ID: moviment.material_ID })
+    ]);
+
+    return history.map(h => ({
+        moviment_ID,
+        ID:                  h.ID,
+        lastQuantity:        h.lastQuantity,
+        currentQuantity:     h.currentQuantity,
+        createdAt:           h.createdAt,
+        createdDate:         _formatDateBR(h.createdAt),
+        createdTime:         _formatTimeBR(h.createdAt),
+        warehouseCode:       warehouse?.code        ?? '',
+        warehouseName:       warehouse?.name        ?? '',
+        materialCode:        material?.code         ?? '',
+        materialDescription: material?.description  ?? '',
+        unitMeasure:         material?.unitMeasure  ?? ''
+    }));
+}
+
+function _formatDateBR(isoStr) {
+    if (!isoStr) return '';
+    const [y, m, d] = isoStr.slice(0, 10).split('-');
+    return `${d}/${m}/${y}`;
+}
+
+function _formatTimeBR(isoStr) {
+    if (!isoStr) return '';
+    return isoStr.slice(11, 16); // HH:MM (UTC — mesmo fuso usado no restante do sistema)
+}
+
+function _extractMovimentId(req) {
+    const sel = req.query?.SELECT;
+    if (!sel) return undefined;
+
+    // Caso 1: query direta com WHERE moviment_ID = ? (ex: $filter via OData)
+    if (sel.where) {
+        const val = _extractFilterValue(sel.where, 'moviment_ID');
+        if (val) return val;
+    }
+
+    // Caso 2: navegação de composição /Moviments(ID='x')/originHistory
+    // O CAP representa a chave pai em SELECT.from.ref[0].where como ID = 'x'
+    const fromRef = sel.from?.ref;
+    if (Array.isArray(fromRef)) {
+        for (const seg of fromRef) {
+            if (seg?.where) {
+                const val = _extractFilterValue(seg.where, 'ID');
+                if (val) return val;
+            }
+        }
+    }
+
+    return undefined;
+}
+
+function _extractFilterValue(where, field) {
+    if (!Array.isArray(where)) return undefined;
+    for (let i = 0; i < where.length; i++) {
+        const token = where[i];
+        if (Array.isArray(token)) {
+            const val = _extractFilterValue(token, field);
+            if (val !== undefined) return val;
+        } else if (token?.xpr) {
+            const val = _extractFilterValue(token.xpr, field);
+            if (val !== undefined) return val;
+        } else if (token?.ref?.[0] === field && i + 2 < where.length && where[i + 1] === '=') {
+            return where[i + 2]?.val;
+        }
+    }
+    return undefined;
 }
 
 // ── Função auxiliar: atualizar estoque e criar histórico ───────────────────────
