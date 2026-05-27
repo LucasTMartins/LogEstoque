@@ -8,6 +8,14 @@ const LOGIN_PAGE = path.resolve(__dirname, '../app/logestoque/webapp/login/index
 cds.on('bootstrap', (app) => {
     app.use(express.json());
     app.post('/auth/login', loginHandler);
+    app.post('/auth/logout', (_req, res) => {
+        res.clearCookie('auth_token', {
+            httpOnly: true,
+            sameSite: 'Lax',
+            path:     '/',
+        });
+        res.status(204).end();
+    });
     app.get('/login', (_req, res) => res.sendFile(LOGIN_PAGE));
 });
 

@@ -14,6 +14,43 @@ export default class Component extends AppComponent {
 		super.init();
 
 		this.setModel(new JSONModel(this._getInitialUserPerms()), "userPerms");
+		this.setModel(new JSONModel({
+			username: "",
+			fullName: "",
+			canManageMaterials: false,
+			canManageMoviments: false,
+			isAdmin: false,
+			loaded: false
+		}), "currentUser");
+		this._loadCurrentUser();
+	}
+
+	private _loadCurrentUser(): void {
+		const token = sessionStorage.getItem("token");
+		const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+		fetch("/odata/v4/main/CurrentUser?$top=1", {
+			credentials: "include",
+			headers
+		})
+			.then((response) => response.ok ? response.json() : Promise.reject(response))
+			.then((data: { value?: Array<Record<string, unknown>> }) => {
+				const user = data.value?.[0];
+				if (!user) { return; }
+
+				(this.getModel("currentUser") as JSONModel | undefined)?.setData({
+					...user,
+					loaded: true
+				});
+				(this.getModel("userPerms") as JSONModel | undefined)?.setData({
+					canManageMaterials: !!user.canManageMaterials,
+					canManageMoviments: !!user.canManageMoviments,
+					isAdmin: !!user.isAdmin
+				});
+			})
+			.catch(() => {
+				(this.getModel("currentUser") as JSONModel | undefined)?.setProperty("/loaded", false);
+			});
 	}
 
 	private _getInitialUserPerms(): Record<string, boolean> {

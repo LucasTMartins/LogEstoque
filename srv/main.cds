@@ -78,10 +78,22 @@ service MainService @(requires: 'authenticated-user') {
 
     @readonly entity CurrentUser {
         key dummy               : String(1);
+            username            : String(12);
+            fullName            : String(121);
             canManageMaterials  : Boolean;
             canManageMoviments  : Boolean;
             isAdmin             : Boolean;
     };
+
+    @readonly entity CurrentUserPermissions {
+        key name        : String(50);
+            description : String;
+    };
+
+    action changeOwnPassword(
+        @mandatory currentPassword : String,
+        @mandatory newPassword     : String
+    ) returns Boolean;
 
     @readonly entity Warehouses as projection on masterdata.Warehouses {
         key ID,

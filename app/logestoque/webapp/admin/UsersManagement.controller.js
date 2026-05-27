@@ -12,7 +12,8 @@ sap.ui.define([
     "sap/m/Title",
     "sap/m/Text",
     "sap/m/MessageBox",
-    "sap/m/MessageToast"
+    "sap/m/MessageToast",
+    "br/dev/imlucas/logestoque/utils/UserMenu"
 // eslint-disable-next-line max-params
 ], function (
     Controller,
@@ -28,7 +29,8 @@ sap.ui.define([
     Title,
     Text,
     MessageBox,
-    MessageToast
+    MessageToast,
+    UserMenu
 ) {
     "use strict";
 
@@ -133,6 +135,10 @@ sap.ui.define([
 
         onNavBack: function () {
             this._navToHome();
+        },
+
+        onUserMenuPress: function (oEvent) {
+            UserMenu.open(this, oEvent.getSource());
         },
 
         _navToHome: function () {

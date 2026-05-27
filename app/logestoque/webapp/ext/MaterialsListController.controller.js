@@ -1,7 +1,8 @@
 sap.ui.define([
     "sap/ui/core/mvc/ControllerExtension",
-    "sap/m/Button"
-], function (ControllerExtension, Button) {
+    "sap/m/Button",
+    "br/dev/imlucas/logestoque/utils/UserMenu"
+], function (ControllerExtension, Button, UserMenu) {
     "use strict";
 
     return ControllerExtension.extend(
@@ -10,10 +11,12 @@ sap.ui.define([
             override: {
                 onAfterRendering: function () {
                     this._addNavBackButton();
+                    UserMenu.addToDynamicPageTitle(this.base.getView(), this);
                     this._hideShellTitle();
                 },
                 routing: {
                     onAfterBinding: function () {
+                        UserMenu.addToDynamicPageTitle(this.base.getView(), this);
                         this._hideShellTitle();
                     }
                 }

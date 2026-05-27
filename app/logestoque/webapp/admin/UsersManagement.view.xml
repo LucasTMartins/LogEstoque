@@ -13,6 +13,14 @@
     >
         <headerContent>
             <Button
+                id="btnUserMenu"
+                icon="sap-icon://customer"
+                text="{currentUser>/username}"
+                tooltip="{i18n>userMenu_tooltip}"
+                type="Transparent"
+                press=".onUserMenuPress"
+            />
+            <Button
                 id="btnNewUser"
                 text="Novo Usuário"
                 type="Emphasized"

@@ -1,13 +1,21 @@
 sap.ui.define([
-    "sap/ui/core/mvc/ControllerExtension"
-], function (ControllerExtension) {
+    "sap/ui/core/mvc/ControllerExtension",
+    "br/dev/imlucas/logestoque/utils/UserMenu"
+], function (ControllerExtension, UserMenu) {
     "use strict";
 
     return ControllerExtension.extend(
         "br.dev.imlucas.logestoque.ext.MovimentsListController",
         {
             override: {
-                onInit: function () {}
+                onAfterRendering: function () {
+                    UserMenu.addToDynamicPageTitle(this.base.getView(), this);
+                },
+                routing: {
+                    onAfterBinding: function () {
+                        UserMenu.addToDynamicPageTitle(this.base.getView(), this);
+                    }
+                }
             }
         }
     );

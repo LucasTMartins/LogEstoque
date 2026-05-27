@@ -1,7 +1,9 @@
 'use strict';
 
 const cds  = require('@sap/cds');
+const bcrypt = require('bcryptjs');
 const rules = require('./moviment-rules');
+const userRules = require('./user-rules');
 
 module.exports = class MainService extends cds.ApplicationService {
 
@@ -9,6 +11,7 @@ module.exports = class MainService extends cds.ApplicationService {
 
         const { Moviments, Stocks, StockHistory } = cds.entities('db.inventory');
         const { Warehouses, Materials }           = cds.entities('db.masterdata');
+        const { Users, UserPermissions }          = cds.entities('db.auth');
 
         // ── Cadastro de materiais ───────────────────────────────────────────
 
@@ -92,8 +95,60 @@ module.exports = class MainService extends cds.ApplicationService {
 
         this.on('READ', 'UnitMeasuresVH', () => UNIT_MEASURES);
 
-        this.on('READ', 'CurrentUser', (req) => {
-            return [{ dummy: '1', canManageMaterials: canManageMaterials(req), canManageMoviments: canManageMoviments(req), isAdmin: req.user?.is('ADMIN') }];
+        this.on('READ', 'CurrentUser', async (req) => {
+            const user = await SELECT.one.from(Users)
+                .columns('username', 'firstName', 'lastName')
+                .where({ username: req.user.id, active: true });
+
+            if (!user) return req.error(404, 'Usuário não encontrado.');
+
+            return [{
+                dummy:              '1',
+                username:           user.username,
+                fullName:           `${user.firstName} ${user.lastName}`,
+                canManageMaterials: canManageMaterials(req),
+                canManageMoviments: canManageMoviments(req),
+                isAdmin:            req.user?.is('ADMIN')
+            }];
+        });
+
+        this.on('READ', 'CurrentUserPermissions', async (req) => {
+            const user = await SELECT.one.from(Users)
+                .columns('ID')
+                .where({ username: req.user.id, active: true });
+
+            if (!user) return req.error(404, 'Usuário não encontrado.');
+
+            const permissions = await SELECT.from(UserPermissions)
+                .columns('permission.name as name', 'permission.description as description')
+                .where({ user_ID: user.ID });
+
+            return permissions
+                .filter(p => p.name)
+                .sort((a, b) => a.name.localeCompare(b.name));
+        });
+
+        this.on('changeOwnPassword', async (req) => {
+            const { currentPassword, newPassword } = req.data;
+            const err = userRules.validatePassword(newPassword);
+            if (err) return req.error(400, err);
+
+            const user = await SELECT.one.from(Users)
+                .columns('ID', 'passwordHash')
+                .where({ username: req.user.id, active: true });
+
+            if (!user) return req.error(404, 'Usuário não encontrado.');
+
+            const currentPasswordMatches = await bcrypt.compare(currentPassword, user.passwordHash);
+            if (!currentPasswordMatches) {
+                return req.error(401, 'Senha atual inválida.');
+            }
+
+            await UPDATE(Users)
+                .set({ passwordHash: await bcrypt.hash(newPassword, 10) })
+                .where({ ID: user.ID });
+
+            return true;
         });
 
         // ── Criação e deleção de movimentação ─────────────────────────────
