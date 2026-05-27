@@ -1,1 +1,1 @@
-{ "canManageMaterials": true, "canManageMoviments": true }
+{ "canManageMaterials": false, "canManageMoviments": false, "isAdmin": false }

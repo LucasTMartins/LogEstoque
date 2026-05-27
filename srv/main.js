@@ -93,7 +93,7 @@ module.exports = class MainService extends cds.ApplicationService {
         this.on('READ', 'UnitMeasuresVH', () => UNIT_MEASURES);
 
         this.on('READ', 'CurrentUser', (req) => {
-            return [{ dummy: '1', canManageMaterials: canManageMaterials(req), canManageMoviments: canManageMoviments(req) }];
+            return [{ dummy: '1', canManageMaterials: canManageMaterials(req), canManageMoviments: canManageMoviments(req), isAdmin: req.user?.is('ADMIN') }];
         });
 
         // ── Criação e deleção de movimentação ─────────────────────────────

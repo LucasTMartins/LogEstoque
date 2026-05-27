@@ -80,6 +80,7 @@ service MainService @(requires: 'authenticated-user') {
         key dummy               : String(1);
             canManageMaterials  : Boolean;
             canManageMoviments  : Boolean;
+            isAdmin             : Boolean;
     };
 
     @readonly entity Warehouses as projection on masterdata.Warehouses {

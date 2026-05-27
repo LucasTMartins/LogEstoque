@@ -201,6 +201,44 @@ sap.ui.define([
         return oSource && Component.getOwnerComponentFor(oSource);
     }
 
+    function getNamedModel(oContext, oEvent, sModelName) {
+        var oSource = getSource(oEvent);
+        var oView;
+        var oComponent = getOwnerComponent(oContext, oEvent);
+        var oModel;
+
+        if (oSource && oSource.getModel) {
+            oModel = oSource.getModel(sModelName);
+            if (oModel) { return oModel; }
+        }
+
+        if (oContext && oContext.getModel) {
+            oModel = oContext.getModel(sModelName);
+            if (oModel) { return oModel; }
+        }
+
+        if (oContext && oContext.getView) {
+            oView = oContext.getView();
+            if (oView && oView.getModel) {
+                oModel = oView.getModel(sModelName);
+                if (oModel) { return oModel; }
+            }
+        }
+
+        while (oComponent) {
+            if (oComponent.getModel) {
+                oModel = oComponent.getModel(sModelName);
+                if (oModel) { return oModel; }
+            }
+
+            var oParent = Component.getOwnerComponentFor(oComponent);
+            if (!oParent || oParent === oComponent) { break; }
+            oComponent = oParent;
+        }
+
+        return null;
+    }
+
     function getDefaultModel(oContext, oEvent) {
         var oOwnerComponent = getOwnerComponent(oContext, oEvent);
         var oSource = getSource(oEvent);
@@ -367,6 +405,18 @@ sap.ui.define([
     return {
         onManageMaterials: function (oEvent) {
             navigateToRoute(this, oEvent, "MaterialsList");
+        },
+
+        onManageUsers: function (oEvent) {
+            var oUserPerms = getNamedModel(this, oEvent, "userPerms");
+            var bIsAdmin = !!(oUserPerms && oUserPerms.getProperty("/isAdmin"));
+
+            if (!bIsAdmin) {
+                MessageBox.error("Você não tem permissão para acessar o gerenciamento de usuários.");
+                return;
+            }
+
+            navigateToRoute(this, oEvent, "UserManagement");
         },
 
         onCreateMoviment: function (oEvent) {

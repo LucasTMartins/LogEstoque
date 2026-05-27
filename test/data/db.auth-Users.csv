@@ -28,4 +28,4 @@ ID,username,firstName,lastName,passwordHash,active,createdAt,createdBy,modifiedA
 14138629-4860-44c2-94ba-d58bd63197a5,vinicius.q,vinicius,q,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-03-20T03:00:00.000Z,admin,2023-03-21T03:00:00.000Z,admin
 14138630-b9fc-4588-b300-03749bf5f597,jessica.ro,jessica,ro,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,false,2023-03-23T03:00:00.000Z,admin,2023-03-24T03:00:00.000Z,admin
 14138631-aa54-4027-868a-eaaa035ebb4b,fernando.p,fernando,p,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-03-26T03:00:00.000Z,admin,2023-03-27T03:00:00.000Z,admin
-14138632-75bb-47f4-a0d8-e78d4c6b4a55,luana.melo,luana,melo,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,false,2023-03-29T03:00:00.000Z,admin,2023-03-30T03:00:00.000Z,admin
+14138632-75bb-47f4-a0d8-e78d4c6b4a55,luana.melo,luana,melo,$2b$10$Enzxnv/IY6mZejCabgW/H.ZS2hCYfuiETH7vC6k9O3tXa0m7c.4Ie,true,2023-03-29T03:00:00.000Z,admin,2023-03-30T03:00:00.000Z,admin

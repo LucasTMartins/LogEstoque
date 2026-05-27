@@ -1,0 +1,78 @@
+<mvc:View
+    controllerName="br.dev.imlucas.logestoque.admin.UsersManagement"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    displayBlock="true"
+>
+    <Page
+        title="Gerenciamento de Usuários"
+        id="usersPage"
+        showNavButton="true"
+        navButtonPress=".onNavBack"
+    >
+        <headerContent>
+            <Button
+                id="btnNewUser"
+                text="Novo Usuário"
+                type="Emphasized"
+                press=".onNewUser"
+            />
+        </headerContent>
+        <subHeader>
+            <Toolbar>
+                <SearchField
+                    id="searchField"
+                    placeholder="Buscar por username ou nome..."
+                    search=".onSearch"
+                    liveChange=".onSearch"
+                    width="20rem"
+                />
+                <ToolbarSpacer />
+                <Label text="Status:" />
+                <Select id="statusFilter" change=".onStatusFilter">
+                    <items>
+                        <core:Item key="" text="Todos" />
+                        <core:Item key="true" text="Ativos" />
+                        <core:Item key="false" text="Inativos" />
+                    </items>
+                </Select>
+            </Toolbar>
+        </subHeader>
+        <content>
+            <Table
+                id="usersTable"
+                items="{usersModel>/displayUsers}"
+                noDataText="Nenhum usuário encontrado."
+                growing="true"
+                growingThreshold="30"
+            >
+                <columns>
+                    <Column width="10rem"><Text text="Username" /></Column>
+                    <Column><Text text="Nome" /></Column>
+                    <Column><Text text="Permissões" /></Column>
+                    <Column width="7rem" hAlign="Center"><Text text="Status" /></Column>
+                    <Column width="7rem" hAlign="Center"><Text text="Ações" /></Column>
+                </columns>
+                <items>
+                    <ColumnListItem>
+                        <cells>
+                            <Text text="{usersModel>username}" />
+                            <Text text="{= ${usersModel>firstName} + ' ' + ${usersModel>lastName}}" />
+                            <Text text="{usersModel>permissionsLabel}" />
+                            <ObjectStatus
+                                text="{= ${usersModel>active} ? 'Ativo' : 'Inativo'}"
+                                state="{= ${usersModel>active} ? 'Success' : 'None'}"
+                            />
+                            <Button
+                                text="Editar"
+                                type="Transparent"
+                                press=".onEditUser"
+                            />
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </content>
+    </Page>
+</mvc:View>

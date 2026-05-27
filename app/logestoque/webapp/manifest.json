@@ -23,6 +23,13 @@
           "annotations": [],
           "odataVersion": "4.01"
         }
+      },
+      "adminService": {
+        "uri": "/odata/v4/admin/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.01"
+        }
       }
     }
   },
@@ -92,8 +99,7 @@
         "uri": "i18n/i18n.properties"
       },
       "userPerms": {
-        "type": "sap.ui.model.json.JSONModel",
-        "uri": "model/userPerms.json"
+        "type": "sap.ui.model.json.JSONModel"
       }
     },
     "resources": {
@@ -116,6 +122,11 @@
           "pattern": "Materials:?query:",
           "name": "MaterialsList",
           "target": "MaterialsList"
+        },
+        {
+          "pattern": "admin/users",
+          "name": "UserManagement",
+          "target": "UserManagement"
         }
       ],
       "targets": {
@@ -152,6 +163,12 @@
                       "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageMaterials",
                       "text": "Gerenciar Materiais",
                       "visible": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": false
+                    },
+                    "ManageUsers": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageUsers",
+                      "text": "Gerenciar Usuários",
+                      "visible": "{userPerms>/isAdmin}",
                       "requiresSelection": false
                     }
                   }
@@ -193,13 +210,13 @@
                     "CreateMaterial": {
                       "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateMaterial",
                       "text": "Novo Material",
-                      "visible": "{userPerms>/canManageMaterials}",
+                      "enabled": "{userPerms>/canManageMaterials}",
                       "requiresSelection": false
                     },
                     "EditDescription": {
                       "press": "br.dev.imlucas.logestoque.ext.CustomActions.onEditDescription",
                       "text": "Editar Descrição",
-                      "visible": "{userPerms>/canManageMaterials}",
+                      "enabled": "{userPerms>/canManageMaterials}",
                       "requiresSelection": true
                     }
                   }
@@ -207,6 +224,11 @@
               }
             }
           }
+        },
+        "UserManagement": {
+          "type": "View",
+          "id": "UserManagement",
+          "name": "br.dev.imlucas.logestoque.admin.UsersManagement"
         }
       }
     }
