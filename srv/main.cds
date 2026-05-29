@@ -7,6 +7,12 @@ using {
 service MainService @(requires: 'authenticated-user') {
 
     // Entidade principal — CRUD completo + ações de workflow
+    @(restrict: [
+        { grant: ['READ', 'UPDATE'],                                to: 'authenticated-user'               },
+        { grant: ['CREATE'],                                        to: ['ESTOQUE', 'LOGISTICA', 'ADMIN']  },
+        { grant: ['DELETE'],                                        to: ['ESTOQUE', 'ADMIN']               },
+        { grant: ['approve', 'rejectMoviment', 'conclude'],         to: 'authenticated-user'               },
+    ])
     @cds.redirection.target: true
     entity Moviments  as projection on inventory.Moviments {
         *,
@@ -21,7 +27,9 @@ service MainService @(requires: 'authenticated-user') {
             when 'E' then 'Entrada'
             when 'S' then 'Saída'
             else type
-        end as typeLabel : String
+        end as typeLabel : String,
+        originHistory     : Composition of many OriginStockHistory      on originHistory.moviment_ID      = ID,
+        destinationHistory: Composition of many DestinationStockHistory on destinationHistory.moviment_ID = ID
     } actions {
         action approve()                                          returns Moviments;
         action rejectMoviment(@mandatory reason : String(500))    returns Moviments;
@@ -46,14 +54,46 @@ service MainService @(requires: 'authenticated-user') {
             active    as ativo
     };
 
-    // Value helps (somente leitura)
-    @readonly entity Materials  as projection on masterdata.Materials {
+    // Cadastro de materiais — leitura para todos, escrita para ESTOQUE e ADMIN
+    @(restrict: [
+        { grant: ['READ'],                       to: 'authenticated-user'   },
+        { grant: ['CREATE', 'UPDATE'],           to: ['ESTOQUE', 'ADMIN']   },
+        { grant: ['DELETE'],                     to: 'authenticated-user'   },
+        { grant: ['toggleActive'],               to: ['ESTOQUE', 'ADMIN']   },
+    ])
+    entity Materials as projection on masterdata.Materials {
         key ID,
             code,
             description,
             unitMeasure,
-            active
+            @mandatory: false  active  // handler defaults to true; validation at DB level
+    } actions {
+        action toggleActive() returns Materials;
     };
+
+    @readonly entity UnitMeasuresVH {
+        key codigo   : String(5);
+            descricao: String(50);
+    };
+
+    @readonly entity CurrentUser {
+        key dummy               : String(1);
+            username            : String(12);
+            fullName            : String(121);
+            canManageMaterials  : Boolean;
+            canManageMoviments  : Boolean;
+            isAdmin             : Boolean;
+    };
+
+    @readonly entity CurrentUserPermissions {
+        key name        : String(50);
+            description : String;
+    };
+
+    action changeOwnPassword(
+        @mandatory currentPassword : String,
+        @mandatory newPassword     : String
+    ) returns Boolean;
 
     @readonly entity Warehouses as projection on masterdata.Warehouses {
         key ID,
@@ -116,4 +156,36 @@ service MainService @(requires: 'authenticated-user') {
             moviment.status            as status,
             moviment.observation       as observation
     };
+
+    @readonly @cds.persistence.skip
+    entity OriginStockHistory {
+        key moviment_ID     : UUID;
+        key ID              : UUID;
+            warehouseCode   : String(10);
+            warehouseName   : String(100);
+            materialCode    : String(40);
+            materialDescription : String(200);
+            unitMeasure     : String(10);
+            lastQuantity    : Integer;
+            currentQuantity : Integer;
+            createdAt       : Timestamp;
+            createdDate     : String(10);
+            createdTime     : String(5);
+    }
+
+    @readonly @cds.persistence.skip
+    entity DestinationStockHistory {
+        key moviment_ID     : UUID;
+        key ID              : UUID;
+            warehouseCode   : String(10);
+            warehouseName   : String(100);
+            materialCode    : String(40);
+            materialDescription : String(200);
+            unitMeasure     : String(10);
+            lastQuantity    : Integer;
+            currentQuantity : Integer;
+            createdAt       : Timestamp;
+            createdDate     : String(10);
+            createdTime     : String(5);
+    }
 }

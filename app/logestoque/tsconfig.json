@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "node16",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
     "skipLibCheck": true,
     "allowJs": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "moduleResolution": "node16",
     "rootDir": "./webapp",
     "outDir": "./dist",
     "paths": {
@@ -14,12 +14,7 @@
         "./webapp/*"
       ]
     },
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/@sapui5/types",
-      "../../node_modules/@types",
-      "../../node_modules/@sapui5/types"
-    ],
+    "types": ["@sapui5/types"],
     "esModuleInterop": true
   },
   "include": [

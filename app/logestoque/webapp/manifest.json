@@ -23,6 +23,13 @@
           "annotations": [],
           "odataVersion": "4.01"
         }
+      },
+      "adminService": {
+        "uri": "/odata/v4/admin/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.01"
+        }
       }
     }
   },
@@ -43,7 +50,22 @@
     }
   },
   "sap.ui5": {
-    "flexEnabled": true,
+    "flexEnabled": false,
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::MovimentsList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MovimentsListController"
+          },
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::MaterialsList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
+          },
+          "sap.fe.templates.ObjectPage.ObjectPageController#br.dev.imlucas.logestoque::MovimentsObjectPage": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MovimentsObjectPageController"
+          }
+        }
+      }
+    },
     "dependencies": {
       "minUI5Version": "1.148.0",
       "libs": {
@@ -75,10 +97,13 @@
       "@i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "uri": "i18n/i18n.properties"
+      },
+      "userPerms": {
+        "type": "sap.ui.model.json.JSONModel"
       }
     },
     "resources": {
-      "css": []
+      "css": [{ "uri": "css/style.css" }]
     },
     "routing": {
       "config": {},
@@ -92,6 +117,16 @@
           "pattern": "Moviments({key}):?query:",
           "name": "MovimentsObjectPage",
           "target": "MovimentsObjectPage"
+        },
+        {
+          "pattern": "Materials:?query:",
+          "name": "MaterialsList",
+          "target": "MaterialsList"
+        },
+        {
+          "pattern": "admin/users",
+          "name": "UserManagement",
+          "target": "UserManagement"
         }
       ],
       "targets": {
@@ -102,8 +137,8 @@
           "options": {
             "settings": {
               "contextPath": "/Moviments",
-              "useSemanticDateRange": false,
-              "variantManagement": "Page",
+              "initialLoad": "Enabled",
+              "variantManagement": "None",
               "navigation": {
                 "Moviments": {
                   "detail": {
@@ -116,6 +151,26 @@
                   "tableSettings": {
                     "type": "ResponsiveTable",
                     "selectionMode": "Multi"
+                  },
+                  "actions": {
+                    "CreateMoviment": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateMoviment",
+                      "text": "Nova Movimentação",
+                      "visible": "{userPerms>/canManageMoviments}",
+                      "requiresSelection": false
+                    },
+                    "ManageMaterials": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageMaterials",
+                      "text": "Gerenciar Materiais",
+                      "visible": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": false
+                    },
+                    "ManageUsers": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageUsers",
+                      "text": "Gerenciar Usuários",
+                      "visible": "{userPerms>/isAdmin}",
+                      "requiresSelection": false
+                    }
                   }
                 }
               }
@@ -131,6 +186,49 @@
               "contextPath": "/Moviments"
             }
           }
+        },
+        "MaterialsList": {
+          "type": "Component",
+          "id": "MaterialsList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Materials",
+              "initialLoad": "Enabled",
+              "variantManagement": "None",
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Multi",
+                    "creationMode": {
+                      "name": "CreationDialog",
+                      "creationFields": "code,description,unitMeasure"
+                    }
+                  },
+                  "actions": {
+                    "CreateMaterial": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateMaterial",
+                      "text": "Novo Material",
+                      "enabled": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": false
+                    },
+                    "EditDescription": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onEditDescription",
+                      "text": "Editar Descrição",
+                      "enabled": "{userPerms>/canManageMaterials}",
+                      "requiresSelection": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "UserManagement": {
+          "type": "View",
+          "id": "UserManagement",
+          "name": "br.dev.imlucas.logestoque.admin.UsersManagement"
         }
       }
     }

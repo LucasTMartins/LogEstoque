@@ -9,11 +9,15 @@ using {db.inventory} from './inventory';
 namespace db.masterdata;
 
 entity Materials : cuid, managed {
-    code        : String(50)  @mandatory  @assert.format: '^[A-Z0-9_-]+$'  @title: 'Código'  @assert.unique;
+    code        : String(50)  @mandatory  @assert.format: '^[A-Z0-9_-]+$'  @title: 'Código';
     description : String      @mandatory  @title        : 'Descrição';
     unitMeasure : String(10)  @mandatory  @assert.format: '^[A-Z]{1,5}$'   @title: 'Unidade';
     active      : Boolean     @mandatory  @title        : 'Ativo';
 }
+
+annotate Materials with @assert.unique: {
+    unique_code: [code]
+};
 
 entity DistributionCenters : cuid, managed {
     code       : String(10)  @mandatory  @assert.format: '^[A-Z0-9_-]+$'  @title: 'Código'  @assert.unique;

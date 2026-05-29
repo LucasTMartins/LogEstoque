@@ -10,6 +10,9 @@ const {
     validateStatusTransition,
     checkStockAvailability,
     checkWarehouseCapacity,
+    validateMaterialActive,
+    validateWarehouseActive,
+    validateStockForSaida,
 } = require('../../srv/moviment-rules');
 
 // ─── validateNewMoviment ──────────────────────────────────────────────────────
@@ -33,6 +36,16 @@ describe('validateNewMoviment', () => {
             quantity:                5,
             originWarehouse_ID:      'wh-orig',
             destinationWarehouse_ID: 'wh-dest',
+        });
+        assert.deepEqual(errors, []);
+    });
+
+    test('Saída válida sem destino (saída para cliente externo)', () => {
+        const errors = validateNewMoviment({
+            type:               TYPE.S,
+            material_ID:        'mat-1',
+            quantity:           5,
+            originWarehouse_ID: 'wh-orig',
         });
         assert.deepEqual(errors, []);
     });
@@ -94,6 +107,15 @@ describe('validateNewMoviment', () => {
             destinationWarehouse_ID: 'wh-dest',
         });
         assert.ok(errors.some(e => /origem/i.test(e)));
+    });
+
+    test('Erro: entrada sem armazém destino', () => {
+        const errors = validateNewMoviment({
+            type:        TYPE.E,
+            material_ID: 'mat-1',
+            quantity:    5,
+        });
+        assert.ok(errors.some(e => /destino/i.test(e)));
     });
 
     test('Erro: origem e destino iguais', () => {
@@ -233,6 +255,89 @@ describe('checkWarehouseCapacity', () => {
 
     test('armazém inexistente: retorna false', () => {
         assert.equal(checkWarehouseCapacity('wh-99', 1, stocks, warehouses), false);
+    });
+
+});
+
+// ─── validateMaterialActive ───────────────────────────────────────────────────
+
+describe('validateMaterialActive', () => {
+
+    test('material ativo: retorna null', () => {
+        assert.equal(validateMaterialActive({ active: true }), null);
+    });
+
+    test('material inativo: retorna mensagem de erro', () => {
+        const result = validateMaterialActive({ active: false });
+        assert.ok(result, 'deve retornar string de erro');
+        assert.ok(/inativo/i.test(result));
+    });
+
+    test('material null (não encontrado): retorna mensagem de erro', () => {
+        const result = validateMaterialActive(null);
+        assert.ok(result, 'deve retornar string de erro');
+        assert.ok(/encontrado/i.test(result));
+    });
+
+});
+
+// ─── validateWarehouseActive ──────────────────────────────────────────────────
+
+describe('validateWarehouseActive', () => {
+
+    test('armazém ativo: retorna null', () => {
+        assert.equal(validateWarehouseActive({ active: true }, 'destino'), null);
+    });
+
+    test('armazém inativo: retorna erro com o papel (origem)', () => {
+        const result = validateWarehouseActive({ active: false }, 'origem');
+        assert.ok(result, 'deve retornar string de erro');
+        assert.ok(/origem/i.test(result));
+        assert.ok(/inativo/i.test(result));
+    });
+
+    test('armazém inativo: retorna erro com o papel (destino)', () => {
+        const result = validateWarehouseActive({ active: false }, 'destino');
+        assert.ok(/destino/i.test(result));
+    });
+
+    test('armazém null (não encontrado): retorna erro', () => {
+        const result = validateWarehouseActive(null, 'destino');
+        assert.ok(result, 'deve retornar string de erro');
+        assert.ok(/encontrado/i.test(result));
+    });
+
+});
+
+// ─── validateStockForSaida ────────────────────────────────────────────────────
+
+describe('validateStockForSaida', () => {
+
+    test('estoque suficiente (quantidade menor): retorna null', () => {
+        assert.equal(validateStockForSaida({ quantity: 10 }, 5), null);
+    });
+
+    test('estoque exato: retorna null', () => {
+        assert.equal(validateStockForSaida({ quantity: 5 }, 5), null);
+    });
+
+    test('estoque insuficiente: retorna erro com as quantidades', () => {
+        const result = validateStockForSaida({ quantity: 3 }, 10);
+        assert.ok(result, 'deve retornar string de erro');
+        assert.ok(/insuficiente/i.test(result));
+        assert.ok(/3/.test(result), 'erro deve mencionar quantidade disponível');
+        assert.ok(/10/.test(result), 'erro deve mencionar quantidade solicitada');
+    });
+
+    test('sem registro de estoque (null): retorna erro', () => {
+        const result = validateStockForSaida(null, 5);
+        assert.ok(result, 'deve retornar string de erro');
+        assert.ok(/estoque/i.test(result));
+    });
+
+    test('estoque zero: retorna erro', () => {
+        const result = validateStockForSaida({ quantity: 0 }, 1);
+        assert.ok(result, 'deve retornar string de erro');
     });
 
 });

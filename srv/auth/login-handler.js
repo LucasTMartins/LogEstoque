@@ -45,6 +45,15 @@ async function loginHandler(req, res) {
     username: user.username,
     fullName: `${user.firstName} ${user.lastName}`,
     roles,
+    isAdmin:             roles.includes('ADMIN'),
+    canManageMaterials:  roles.includes('ESTOQUE') || roles.includes('ADMIN'),
+    canManageMoviments:  roles.includes('ESTOQUE') || roles.includes('LOGISTICA') || roles.includes('ADMIN'),
+  });
+
+  res.cookie('auth_token', token, {
+    httpOnly: true,
+    sameSite: 'Lax',
+    path:     '/',
   });
 
   return res.status(200).json({ token, username: user.username, roles });

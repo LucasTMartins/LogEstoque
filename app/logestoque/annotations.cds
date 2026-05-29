@@ -10,6 +10,18 @@ annotate service.Moviments with @cds.search: {
 };
 
 annotate service.Moviments with @(
+    UI.HeaderInfo         : {
+        TypeName      : 'Movimentação',
+        TypeNamePlural: 'Movimentações',
+        Title         : {
+            $Type: 'UI.DataField',
+            Value: typeLabel,
+        },
+        Description   : {
+            $Type: 'UI.DataField',
+            Value: statusLabel,
+        },
+    },
     UI.SelectionFields    : [
         status,
         type,
@@ -116,12 +128,26 @@ annotate service.Moviments with @(
             },
         ],
     },
-    UI.Facets             : [{
-        $Type : 'UI.ReferenceFacet',
-        ID    : 'DetailsFacet',
-        Label : 'Detalhes da Movimentação',
-        Target: '@UI.FieldGroup#Details',
-    }],
+    UI.Facets             : [
+        {
+            $Type : 'UI.ReferenceFacet',
+            ID    : 'DetailsFacet',
+            Label : 'Detalhes da Movimentação',
+            Target: '@UI.FieldGroup#Details',
+        },
+        {
+            $Type : 'UI.ReferenceFacet',
+            ID    : 'OriginHistoryFacet',
+            Label : 'Histórico — Depósito de Origem',
+            Target: 'originHistory/@UI.LineItem',
+        },
+        {
+            $Type : 'UI.ReferenceFacet',
+            ID    : 'DestinationHistoryFacet',
+            Label : 'Histórico — Depósito de Destino',
+            Target: 'destinationHistory/@UI.LineItem',
+        },
+    ],
 );
 
 // Value helps e textos para associações em Moviments
@@ -292,6 +318,92 @@ annotate service.Moviments with {
     observation          @title: 'Observação';
     quantity             @title: 'Quantidade';
 }
+
+// ─── Materials — cadastro de materiais ───────────────────────────────────────
+
+annotate service.Materials with @(
+    Capabilities.InsertRestrictions: { Insertable: true },
+    Capabilities.UpdateRestrictions: { Updatable:  true },
+    Capabilities.DeleteRestrictions: { Deletable:  true },
+);
+
+annotate service.Materials with {
+    ID          @UI.Hidden;
+    code        @title: 'Código';
+    description @title: 'Descrição';
+    unitMeasure @title: 'Unidade de Medida' @(
+        Common.ValueListWithFixedValues: true,
+        Common.ValueList               : {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'UnitMeasuresVH',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: unitMeasure,
+                    ValueListProperty: 'codigo',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'descricao',
+                },
+            ],
+        },
+    );
+    active      @title: 'Ativo';
+}
+
+annotate service.Materials with @(
+    UI.SelectionVariant: {
+        SelectOptions: [{
+            PropertyName: active,
+            Ranges: [{
+                Sign  : #Include,
+                Option: #EQ,
+                Low   : true
+            }]
+        }]
+    },
+    UI.HeaderInfo         : {
+        TypeName      : 'Material',
+        TypeNamePlural: 'Materiais',
+        Title         : {
+            $Type: 'UI.DataField',
+            Value: code,
+        },
+        Description   : {
+            $Type: 'UI.DataField',
+            Value: description,
+        },
+    },
+    UI.SelectionFields    : [code, description, active],
+    UI.LineItem           : [
+        {
+            $Type: 'UI.DataField',
+            Value: code,
+            Label: 'Código',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: description,
+            Label: 'Descrição',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: unitMeasure,
+            Label: 'Unidade',
+        },
+        {
+            $Type: 'UI.DataField',
+            Value: active,
+            Label: 'Ativo',
+        },
+        {
+            $Type : 'UI.DataFieldForAction',
+            Action: 'MainService.toggleActive',
+            Label : 'Ativar/Desativar',
+        },
+    ],
+);
 
 // ─── MovimentByWarehouse — anotações de campos ───────────────────────────────
 
@@ -556,3 +668,125 @@ annotate service.MovimentDetail with @(UI.LineItem: [
         Value: currentQuantity,
     },
 ], );
+
+// ─── OriginStockHistory / DestinationStockHistory — histórico de estoque ─────
+
+annotate service.OriginStockHistory with @UI.SelectionFields: [createdAt];
+
+annotate service.OriginStockHistory with {
+    moviment_ID     @UI.Hidden;
+    ID              @UI.Hidden;
+    createdAt       @title: 'Data' @odata.Type: 'Edm.Date' @UI.HiddenFilter: false @UI.Hidden: true;
+    createdDate     @title: 'Data';
+    createdTime     @title: 'Hora';
+    warehouseCode   @title: 'Cód. Depósito';
+    warehouseName   @title: 'Depósito';
+    materialCode    @title: 'Material';
+    materialDescription @title: 'Descrição';
+    unitMeasure     @title: 'UM';
+    lastQuantity    @title: 'Qtd. Anterior';
+    currentQuantity @title: 'Qtd. Atual';
+}
+
+annotate service.OriginStockHistory with @(UI.LineItem: [
+    {
+        $Type: 'UI.DataField',
+        Value: createdDate,
+        Label: 'Data',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: createdTime,
+        Label: 'Hora',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseCode,
+        Label: 'Cód. Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseName,
+        Label: 'Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: materialCode,
+        Label: 'Material',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: unitMeasure,
+        Label: 'UM',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: lastQuantity,
+        Label: 'Qtd. Anterior',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: currentQuantity,
+        Label: 'Qtd. Atual',
+    },
+]);
+
+annotate service.DestinationStockHistory with @UI.SelectionFields: [createdAt];
+
+annotate service.DestinationStockHistory with {
+    moviment_ID     @UI.Hidden;
+    ID              @UI.Hidden;
+    createdAt       @title: 'Data' @odata.Type: 'Edm.Date' @UI.HiddenFilter: false @UI.Hidden: true;
+    createdDate     @title: 'Data';
+    createdTime     @title: 'Hora';
+    warehouseCode   @title: 'Cód. Depósito';
+    warehouseName   @title: 'Depósito';
+    materialCode    @title: 'Material';
+    materialDescription @title: 'Descrição';
+    unitMeasure     @title: 'UM';
+    lastQuantity    @title: 'Qtd. Anterior';
+    currentQuantity @title: 'Qtd. Atual';
+}
+
+annotate service.DestinationStockHistory with @(UI.LineItem: [
+    {
+        $Type: 'UI.DataField',
+        Value: createdDate,
+        Label: 'Data',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: createdTime,
+        Label: 'Hora',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseCode,
+        Label: 'Cód. Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: warehouseName,
+        Label: 'Depósito',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: materialCode,
+        Label: 'Material',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: unitMeasure,
+        Label: 'UM',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: lastQuantity,
+        Label: 'Qtd. Anterior',
+    },
+    {
+        $Type: 'UI.DataField',
+        Value: currentQuantity,
+        Label: 'Qtd. Atual',
+    },
+]);
