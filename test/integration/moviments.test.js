@@ -8,6 +8,7 @@ const cds    = require('@sap/cds');
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 let http;
+let httpAprov;
 let material_ID, warehouse_ID;
 const BASE = '/odata/v4/main';
 
@@ -22,10 +23,19 @@ before(async () => {
         validateStatus: () => true, // nunca lançar em 4xx/5xx — tratamos manualmente
     });
 
-    // Login para obter token e configurar o header padrão
+    // Login joao.silva (ESTOQUE) — usado para criar/concluir
     const loginRes = await http.post('/auth/login', { username: 'joao.silva', password: 'pass-01' });
     assert.equal(loginRes.status, 200, 'Login deve retornar 200');
     http.defaults.headers.common['Authorization'] = `Bearer ${loginRes.data.token}`;
+
+    // Login maria.aprovacao (APROVACAO) — usado para aprovar/rejeitar
+    const aprovRes = await http.post('/auth/login', { username: 'maria.aprovacao', password: 'pass-01' });
+    assert.equal(aprovRes.status, 200, 'Login de aprovação deve retornar 200');
+    httpAprov = axios.create({
+        baseURL:        url,
+        headers:        { 'content-type': 'application/json', Authorization: `Bearer ${aprovRes.data.token}` },
+        validateStatus: () => true,
+    });
 
     // Buscar IDs de seed data (apenas ativos para respeitar as novas validações)
     const matRes = await http.get(`${BASE}/Materials?$filter=active eq true&$orderby=code asc&$top=1`);
@@ -47,6 +57,16 @@ async function GET(path) {
 
 async function POST(path, data) {
     const res = await http.post(path, data);
+    if (res.status >= 400) {
+        const err = new Error(`HTTP ${res.status}`);
+        err.response = res;
+        throw err;
+    }
+    return res;
+}
+
+async function POSTasAprov(path, data) {
+    const res = await httpAprov.post(path, data);
     if (res.status >= 400) {
         const err = new Error(`HTTP ${res.status}`);
         err.response = res;
@@ -117,8 +137,8 @@ test('fluxo Entrada: criar → aprovar → concluir atualiza estoque', async () 
     );
     const qtdBefore = stockBefore ? stockBefore.quantity : 0;
 
-    // Aprovar
-    const approveRes = await POST(`${BASE}/Moviments(${mov.ID})/MainService.approve`, {});
+    // Aprovar (requer role APROVACAO)
+    const approveRes = await POSTasAprov(`${BASE}/Moviments(${mov.ID})/MainService.approve`, {});
     assert.equal(approveRes.data.status, 'A');
 
     // Concluir
@@ -144,7 +164,7 @@ test('fluxo Entrada: criar → aprovar → concluir atualiza estoque', async () 
 
 test('rejeitar movimentação pendente muda status para R', async () => {
     const mov = await criarEntrada(5);
-    const res = await POST(`${BASE}/Moviments(${mov.ID})/MainService.rejectMoviment`, {
+    const res = await POSTasAprov(`${BASE}/Moviments(${mov.ID})/MainService.rejectMoviment`, {
         reason: 'Material incorreto no pedido',
     });
     assert.equal(res.data.status, 'R');
@@ -154,7 +174,7 @@ test('rejeitar movimentação pendente muda status para R', async () => {
 test('rejeitar sem motivo deve retornar 4xx', async () => {
     const mov = await criarEntrada(3);
     await assert.rejects(
-        () => POST(`${BASE}/Moviments(${mov.ID})/MainService.rejectMoviment`, { reason: '' }),
+        () => POSTasAprov(`${BASE}/Moviments(${mov.ID})/MainService.rejectMoviment`, { reason: '' }),
         (err) => {
             assert.ok(err.response?.status >= 400, `esperado 4xx, recebido ${err.response?.status}`);
             return true;
@@ -166,9 +186,9 @@ test('rejeitar sem motivo deve retornar 4xx', async () => {
 
 test('não pode aprovar movimentação já aprovada', async () => {
     const mov = await criarEntrada(1);
-    await POST(`${BASE}/Moviments(${mov.ID})/MainService.approve`, {});
+    await POSTasAprov(`${BASE}/Moviments(${mov.ID})/MainService.approve`, {});
     await assert.rejects(
-        () => POST(`${BASE}/Moviments(${mov.ID})/MainService.approve`, {}),
+        () => POSTasAprov(`${BASE}/Moviments(${mov.ID})/MainService.approve`, {}),
         (err) => { assert.ok(err.response?.status >= 400); return true; }
     );
 });
