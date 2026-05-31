@@ -61,13 +61,13 @@
 CAP Node.js App
 ├── srv/
 │   ├── main.cds              ← MainService: projeções e ações para a UI Fiori
-│   ├── main-handler.js       ← Handlers das ações de negócio
+│   ├── main.js               ← Handlers das ações de negócio
 │   ├── endpoints.cds         ← EndpointsService: CRUD administrativo
-│   ├── endpoints-handler.js  ← Handlers de validação e segurança
-│   ├── auth-handler.js       ← REST: POST /auth/login, GET /auth/me
-│   ├── jwt-middleware.js     ← Intercepta requisições, valida JWT, popula cds.context.user
 │   ├── moviment-rules.js     ← Funções puras de validação de regras de negócio
-│   └── health-handler.js     ← GET /health
+│   └── auth/
+│       ├── auth-middleware.js ← Intercepta requisições, valida JWT, popula cds.context.user
+│       ├── login-handler.js   ← REST: POST /auth/login
+│       └── jwt.js             ← Utilitários de geração/verificação de token
 │
 ├── db/
 │   ├── types.cds             ← Enums: MovimentTypes, MovimentStatus
@@ -79,10 +79,12 @@ CAP Node.js App
 └── app/logestoque/
     ├── annotations.cds       ← Anotações Fiori Elements (UI.LineItem, UI.Facets, etc.)
     └── webapp/
-        ├── Component.ts      ← Injeta Bearer token no modelo OData
+        ├── Component.ts      ← Inicializa modelos JSON de permissões; carrega usuário atual via /odata/v4/main/CurrentUser
         ├── manifest.json     ← Rotas SPA
-        ├── view/             ← Views XML (Login, EstoqueDashboard — freestyle)
-        └── controller/       ← Controllers TypeScript
+        ├── login/            ← View XML + Controller do Login (freestyle)
+        ├── ext/              ← Custom actions e list controllers (Fiori Elements extensions)
+        ├── utils/            ← RequestInterceptor e utilitários
+        └── model/            ← userPerms.json e outros modelos estáticos
 ```
 
 ---
@@ -131,14 +133,14 @@ Permissions         (1) ──── (N) UserPermissions   [Association from Use
 - **Audiência:** UI Fiori Elements
 - **Autenticação:** `@requires: 'authenticated-user'`
 - **Entidades expostas (read-only):** `MovimentByWarehouse`, `MovimentDetail`, `Materials`, `Warehouses`, `DistributionCenters`
-- **Ações (bound/unbound):** `criarMovimentacao`, `aprovarMovimentacao`, `rejeitarMovimentacao`, `concluirMovimentacao`
+- **Ações (bound):** `approve`, `rejectMoviment(reason)`, `conclude`
 - **Funções:** `posicaoEstoque(materialID)`
 
 ### 6.2 `EndpointsService` — `/odata/v4/endpoints`
 
 - **Audiência:** Administração (ferramentas, scripts, UI admin futura)
 - **Autenticação:** `@requires: 'ADMIN'`
-- **Entidades expostas:** Users (`excluding { password }`), Permissions, Materials, DistributionCenters, Warehouses, Addresses, Stocks, Moviments, StockHistory
+- **Entidades expostas:** Users (deve excluir `passwordHash`), Permissions, Materials, DistributionCenters, Warehouses, Addresses, Stocks, Moviments, StockHistory
 - **Ações:** `redefinirSenha(userID, novaSenha)`
 - **Restrições:** `StockHistory` imutável (bloqueia CREATE/UPDATE/DELETE); `Moviments` em status C/R bloqueiam UPDATE/DELETE
 
@@ -178,7 +180,7 @@ Browser          Nginx           CAP App          PostgreSQL
 ## 8. Decisões Arquiteturais (ADRs Resumidos)
 
 ### ADR-01: Autenticação JWT local (sem XSUAA)
-- **Decisão:** Implementar `POST /auth/login` com `jsonwebtoken` + `bcrypt`; middleware customizado popula `cds.context.user`
+- **Decisão:** Implementar `POST /auth/login` com `jsonwebtoken` + `bcryptjs`; middleware customizado popula `cds.context.user`
 - **Motivo:** Sistema hospedado fora do SAP BTP; sem acesso ao SAP XSUAA
 - **Trade-off:** Sem refresh token; sessões expiram em 8h (aceitável para TCC)
 
@@ -190,9 +192,10 @@ Browser          Nginx           CAP App          PostgreSQL
 - **Decisão:** Profile `[production]` usa PostgreSQL; `[development]` usa SQLite in-memory
 - **Motivo:** Paridade com produção sem necessidade de PostgreSQL local no desenvolvimento
 
-### ADR-04: Sem dependência circular no modelo CDS
-- **Decisão:** `master-data.cds` não importa `inventory.cds`; backlinks de `Warehouses → Stocks` acessadas via OData `$expand`
-- **Motivo:** Dependência circular causa erros em versões estritas do CDS
+### ADR-04: Dependências no modelo CDS
+- **Decisão:** `master-data.cds` importa `inventory.cds` apenas para a composição `Warehouses.stocks` (backlink navegacional)
+- **Motivo:** Necessário para expor `Warehouses` com `stocks` expandidos via OData; o CDS v9 suporta essa importação sem gerar dependência circular real
+- **Exceção documentada:** A regra geral de evitar importações entre master-data e inventory é mantida; este é o único caso permitido e justificado
 
 ### ADR-05: Fiori Elements como padrão de UI
 - **Decisão:** Usar exclusivamente List Report + Object Page via anotações CDS; freestyle apenas para Login e Dashboard de Estoque

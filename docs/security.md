@@ -13,7 +13,7 @@
 - **Fluxo:**
   1. Recebe `username` + `password`
   2. Busca usuário em `db.auth.Users`; verifica `active === true`
-  3. Compara senha com hash bcrypt via `bcrypt.compare(password, user.password)`
+  3. Compara senha com hash bcrypt via `bcryptjs.compare(password, user.passwordHash)`
   4. Gera JWT com payload `{ sub, username, name, permissions, iat, exp }`
   5. Assina com `JWT_SECRET` (variável de ambiente obrigatória)
 
@@ -34,7 +34,7 @@
 
 ### 1.3 Middleware CAP
 
-O arquivo `srv/jwt-middleware.js` intercepta **todas** as requisições:
+O arquivo `srv/auth/auth-middleware.js` intercepta **todas** as requisições:
 - Extrai Bearer token do header `Authorization`
 - Verifica assinatura e expiração via `jwt.verify(token, JWT_SECRET)`
 - Popula `req.user = new cds.User({ id, roles, attr })`
@@ -48,7 +48,7 @@ O arquivo `srv/jwt-middleware.js` intercepta **todas** as requisições:
     "requires": {
       "auth": {
         "kind": "custom",
-        "impl": "./srv/jwt-middleware.js"
+        "impl": "./srv/auth/auth-middleware"
       }
     }
   }
@@ -99,10 +99,10 @@ O token JWT contém `"permissions": ["ESTOQUE", "APROVACAO"]`. O middleware conv
 
 ### 3.1 Senhas
 
-- **Armazenamento:** Hash bcrypt com custo 12 (`$2b$12$...`)
-- **Geração:** `bcrypt.hash(password, 12)` nos handlers `before CREATE|UPDATE Users`
-- **Verificação:** `bcrypt.compare(password, hash)`
-- **Exposição:** Campo `password` **nunca** aparece em projeções OData (`excluding { password }` no `EndpointsService`)
+- **Armazenamento:** Hash bcrypt com custo 10 (`$2b$10$...`), campo `passwordHash`
+- **Geração:** `bcryptjs.hash(password, 10)` nos handlers `before CREATE|UPDATE Users`
+- **Verificação:** `bcryptjs.compare(password, hash)`
+- **Exposição:** Campo `passwordHash` **nunca** deve aparecer em projeções OData (`EndpointsService` deve excluir o campo)
 
 ### 3.2 Criptografia em Trânsito
 
@@ -227,7 +227,7 @@ location /auth/login {
 ### Pré-deploy obrigatório
 - [ ] `JWT_SECRET` definido com no mínimo 32 caracteres aleatórios
 - [ ] Senhas no banco como bcrypt (nunca texto puro)
-- [ ] Campo `password` excluído das projeções OData
+- [ ] Campo `passwordHash` excluído das projeções OData
 - [ ] `EndpointsService` com `@requires: 'ADMIN'`
 - [ ] Arquivo `.env` no `.gitignore`
 - [ ] `nginx/ssl/` no `.dockerignore` e `.gitignore`

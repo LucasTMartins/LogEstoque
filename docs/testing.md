@@ -76,7 +76,7 @@ test/
 ```javascript
 const { test, describe } = require('node:test')
 const assert = require('node:assert/strict')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
 const JWT_SECRET = 'test-secret-12345678901234567890'
@@ -192,7 +192,7 @@ describe('Regras de Movimentação', () => {
 |---|---|
 | Login com credenciais corretas | Status 200; token JWT retornado |
 | Login com senha errada | Status 401 |
-| Login com usuário inativo | Status 403 |
+| Login com usuário inativo | Status 401 (resposta genérica — não revela existência do usuário) |
 | `GET /auth/me` com token válido | Status 200; `username` correto |
 | `GET /auth/me` sem token | Status 401 |
 

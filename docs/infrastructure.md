@@ -82,9 +82,6 @@ RUN npm run build --workspace=app/logestoque || true
 
 # Estágio 2: Produção (apenas prod deps + artefatos)
 FROM node:20-slim AS production
-# Dependências nativas para bcrypt
-RUN apt-get update && apt-get install -y python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package*.json ./
 COPY app/logestoque/package.json ./app/logestoque/

@@ -14,7 +14,7 @@
 | **Adaptador PostgreSQL** | `@cap-js/postgres` | v2 | Adaptador oficial CAP para PostgreSQL |
 | **Adaptador SQLite (dev)** | `@cap-js/sqlite` | v2 | Banco em memória para desenvolvimento local sem infraestrutura |
 | **Autenticação** | `jsonwebtoken` | v9 | Geração e verificação de JWT (HS256) |
-| **Hash de senhas** | `bcrypt` | v5 | Hash bcrypt com custo 12; binário nativo para performance |
+| **Hash de senhas** | `bcryptjs` | v3 | Hash bcrypt com custo 10; implementação pure JS (sem dependências nativas) |
 
 ### 1.1 Estrutura de pacotes npm
 
@@ -30,11 +30,10 @@ LogEstoque/ (workspace raiz)
 ```json
 {
   "scripts": {
-    "start":  "cds-serve",
-    "dev":    "cds watch",
-    "build":  "cds build --production",
-    "test":   "node --test",
-    "deploy": "cds deploy --to postgres"
+    "start":            "cds-serve",
+    "dev":              "cds watch",
+    "watch-logestoque": "cds watch --open br.dev.imlucas.logestoque/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "test":             "node --test"
   }
 }
 ```
@@ -100,7 +99,7 @@ LogEstoque/ (workspace raiz)
       },
       "auth": {
         "kind": "custom",
-        "impl": "./srv/jwt-middleware.js"
+        "impl": "./srv/auth/auth-middleware"
       }
     },
     "server": {
@@ -169,7 +168,7 @@ LogEstoque/ (workspace raiz)
 {
   "@cap-js/postgres": "^2",
   "@sap/cds": "^9",
-  "bcrypt": "^5",
+  "bcryptjs": "^3.0.3",
   "jsonwebtoken": "^9"
 }
 ```
@@ -178,9 +177,9 @@ LogEstoque/ (workspace raiz)
 
 ```json
 {
+  "@cap-js/cds-test": "^0",
   "@cap-js/sqlite": "^2",
   "@sap/cds-dk": "^9",
-  "@types/bcrypt": "^5",
   "@types/jsonwebtoken": "^9"
 }
 ```
@@ -201,7 +200,7 @@ O projeto usa npm workspaces para gerenciar o app UI5 como sub-pacote:
 
 ```json
 {
-  "workspaces": ["app/logestoque"],
+  "workspaces": ["app/*"],
   "sapux": ["app/logestoque"]
 }
 ```
