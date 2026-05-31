@@ -1,0 +1,90 @@
+@base_url     = http://localhost:4004
+@odata        = {{base_url}}/odata/v4/main
+@material_id  = 20157005-d245-412e-bbef-ba3d5f84d175
+@warehouse_id = 11915179-3453-42ad-84c8-5c859edf99de
+
+# INSTRUÇÕES:
+# 1. Execute os logins abaixo (Step 0a e 0b)
+# 2. Copie os tokens retornados e cole em @token_joao e @token_maria
+@token_joao  = <COLE_AQUI_TOKEN_JOAO>
+@token_maria = <COLE_AQUI_TOKEN_MARIA>
+
+### Step 0a — Login joao.silva (ESTOQUE)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "joao.silva",
+    "password": "pass-01"
+}
+
+###
+
+### Step 0b — Login maria.aprovacao (APROVACAO)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "maria.aprovacao",
+    "password": "pass-01"
+}
+
+###
+
+### Step 1 — Criar movimentação de Entrada (joao.silva)
+# Após executar, copie o ID retornado e cole em @moviment_id abaixo
+POST {{odata}}/Moviments
+Content-Type: application/json
+Authorization: Bearer {{token_joao}}
+
+{
+    "type": "E",
+    "material_ID": "{{material_id}}",
+    "quantity": 10,
+    "destinationWarehouse_ID": "{{warehouse_id}}",
+    "observation": "Entrada via teste HTTP"
+}
+
+###
+
+# Substitua pelo ID retornado no Step 1
+@moviment_id = <COLE_AQUI_MOVIMENT_ID>
+
+### Step 2 — Aprovar movimentação (maria.aprovacao)
+POST {{odata}}/Moviments({{moviment_id}})/MainService.approve
+Content-Type: application/json
+Authorization: Bearer {{token_maria}}
+
+{}
+
+###
+
+### Step 3 — Concluir movimentação (joao.silva)
+POST {{odata}}/Moviments({{moviment_id}})/MainService.conclude
+Content-Type: application/json
+Authorization: Bearer {{token_joao}}
+
+{}
+
+###
+
+### Step 4 — Posição de estoque após conclusão
+GET {{odata}}/posicaoEstoque(materialID={{material_id}})
+Authorization: Bearer {{token_joao}}
+
+###
+
+### Rejeitar movimentação (fluxo alternativo — use um moviment_id em status Pendente)
+# POST {{odata}}/Moviments({{moviment_id}})/MainService.rejectMoviment
+# Content-Type: application/json
+# Authorization: Bearer {{token_maria}}
+#
+# {
+#     "reason": "Quantidade incorreta, reenviar com valor correto"
+# }
+
+###
+
+### Listagem geral de movimentações
+GET {{odata}}/Moviments?$orderby=createdAt desc&$top=5
+Authorization: Bearer {{token_joao}}

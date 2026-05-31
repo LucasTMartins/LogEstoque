@@ -1,0 +1,55 @@
+@base_url = http://localhost:4004
+
+### Login — joao.silva (ESTOQUE)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "joao.silva",
+    "password": "pass-01"
+}
+
+###
+
+### GET /auth/me (substitua <TOKEN> pelo token retornado acima)
+GET {{base_url}}/auth/me
+Authorization: Bearer <TOKEN>
+
+###
+
+### Logout
+POST {{base_url}}/auth/logout
+Content-Type: application/json
+
+###
+
+### Login failure — senha errada (esperado 401)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "joao.silva",
+    "password": "senha-errada"
+}
+
+###
+
+### Login — admin (ADMIN)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "pass-01"
+}
+
+###
+
+### Login — usuário inativo (esperado 401)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "maria.santos",
+    "password": "pass-01"
+}
