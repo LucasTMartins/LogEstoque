@@ -42,6 +42,13 @@ service MainService @(requires: 'authenticated-user') {
     } actions {
         action approve()                                          returns Moviments;
         action rejectMoviment(@mandatory reason : String(500))    returns Moviments;
+        @Common.IsActionCritical: true
+        @Common.SideEffects.TargetProperties: [
+            'in/status',
+            'in/statusLabel',
+            'in/canNotApproveReject',
+            'in/canNotConclude'
+        ]
         action conclude()                                         returns Moviments;
     };
 
