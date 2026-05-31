@@ -114,6 +114,72 @@ sap.ui.define([
         return oModel ? oModel.getData() : {};
     }
 
+    function navigateToRoute(oContext, sRouteName) {
+        var oRouter = getAppRouter(oContext);
+        if (oRouter) {
+            oRouter.navTo(sRouteName);
+        }
+    }
+
+    function getAppRouter(oContext) {
+        var oComponent = getOwnerComponent(oContext);
+        var oRouter;
+
+        while (oComponent) {
+            oRouter = oComponent.getRouter && oComponent.getRouter();
+            if (oRouter) { return oRouter; }
+
+            var oParent = Component.getOwnerComponentFor(oComponent);
+            if (!oParent || oParent === oComponent) { break; }
+            oComponent = oParent;
+        }
+
+        return null;
+    }
+
+    function getManagementItems(oContext) {
+        var oUser = getCurrentUser(oContext);
+        var aItems = [];
+
+        if (oUser.canManageMaterials) {
+            aItems.push({
+                icon: "sap-icon://product",
+                text: getText(oContext, "management_materials"),
+                route: "MaterialsList"
+            });
+        }
+        if (oUser.canManageWarehouses) {
+            aItems.push({
+                icon: "sap-icon://factory",
+                text: getText(oContext, "management_warehouses"),
+                route: "WarehousesList"
+            });
+        }
+        if (oUser.canManageDistributionCenters) {
+            aItems.push({
+                icon: "sap-icon://building",
+                text: getText(oContext, "management_distributionCenters"),
+                route: "DistributionCentersList"
+            });
+        }
+        if (oUser.canViewStocks) {
+            aItems.push({
+                icon: "sap-icon://inventory",
+                text: getText(oContext, "management_stocks"),
+                route: "StocksList"
+            });
+        }
+        if (oUser.isAdmin) {
+            aItems.push({
+                icon: "sap-icon://group",
+                text: getText(oContext, "management_users"),
+                route: "UserManagement"
+            });
+        }
+
+        return aItems;
+    }
+
     function findDynamicPage(oControl) {
         if (!oControl) { return null; }
 
@@ -175,32 +241,68 @@ sap.ui.define([
 
     function open(oContext, oSource) {
         var oUser = getCurrentUser(oContext);
+        var aManagementItems = getManagementItems(oContext);
+        var aButtons = [];
+
+        if (aManagementItems.length > 0) {
+            aButtons.push(new Button({
+                icon: "sap-icon://action-settings",
+                text: getText(oContext, "userMenu_management"),
+                press: function () {
+                    openManagementMenu(oContext, oSource);
+                }
+            }));
+        }
+
+        aButtons.push(
+            new Button({
+                icon: "sap-icon://hint",
+                text: getText(oContext, "userMenu_permissions"),
+                press: function () {
+                    showPermissions(oContext);
+                }
+            }),
+            new Button({
+                icon: "sap-icon://key",
+                text: getText(oContext, "userMenu_changePassword"),
+                press: function () {
+                    showChangePassword(oContext);
+                }
+            }),
+            new Button({
+                icon: "sap-icon://log",
+                text: getText(oContext, "userMenu_logout"),
+                type: "Reject",
+                press: function () {
+                    logout();
+                }
+            })
+        );
+
         var oActionSheet = new ActionSheet({
             title: oUser.fullName || oUser.username || getText(oContext, "userMenu_title"),
-            buttons: [
-                new Button({
-                    icon: "sap-icon://hint",
-                    text: getText(oContext, "userMenu_permissions"),
-                    press: function () {
-                        showPermissions(oContext);
-                    }
-                }),
-                new Button({
-                    icon: "sap-icon://key",
-                    text: getText(oContext, "userMenu_changePassword"),
-                    press: function () {
-                        showChangePassword(oContext);
-                    }
-                }),
-                new Button({
-                    icon: "sap-icon://log",
-                    text: getText(oContext, "userMenu_logout"),
-                    type: "Reject",
-                    press: function () {
-                        logout();
-                    }
-                })
-            ],
+            buttons: aButtons,
+            afterClose: function () {
+                oActionSheet.destroy();
+            }
+        });
+
+        oActionSheet.openBy(oSource);
+    }
+
+    function openManagementMenu(oContext, oSource) {
+        var aButtons = getManagementItems(oContext).map(function (oItem) {
+            return new Button({
+                icon: oItem.icon,
+                text: oItem.text,
+                press: function () {
+                    navigateToRoute(oContext, oItem.route);
+                }
+            });
+        });
+        var oActionSheet = new ActionSheet({
+            title: getText(oContext, "userMenu_management"),
+            buttons: aButtons,
             afterClose: function () {
                 oActionSheet.destroy();
             }

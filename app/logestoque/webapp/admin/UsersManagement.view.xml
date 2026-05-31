@@ -2,32 +2,49 @@
     controllerName="br.dev.imlucas.logestoque.admin.UsersManagement"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
+    xmlns:f="sap.f"
     xmlns:core="sap.ui.core"
     displayBlock="true"
 >
-    <Page
-        title="Gerenciamento de Usuários"
+    <f:DynamicPage
         id="usersPage"
-        showNavButton="true"
-        navButtonPress=".onNavBack"
+        fitContent="true"
+        headerExpanded="true"
+        toggleHeaderOnTitleClick="false"
     >
-        <headerContent>
-            <Button
-                id="btnUserMenu"
-                icon="sap-icon://customer"
-                text="{currentUser>/username}"
-                tooltip="{i18n>userMenu_tooltip}"
-                type="Transparent"
-                press=".onUserMenuPress"
-            />
-            <Button
-                id="btnNewUser"
-                text="Novo Usuário"
-                type="Emphasized"
-                press=".onNewUser"
-            />
-        </headerContent>
-        <subHeader>
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:navigationActions>
+                    <Button
+                        icon="sap-icon://nav-back"
+                        text="Voltar"
+                        type="Transparent"
+                        press=".onNavBack"
+                    />
+                </f:navigationActions>
+                <f:heading>
+                    <Title text="Gerenciamento de Usuários" />
+                </f:heading>
+                <f:actions>
+                    <Button
+                        id="btnUserMenu"
+                        icon="sap-icon://customer"
+                        text="{currentUser>/username}"
+                        tooltip="{i18n>userMenu_tooltip}"
+                        type="Transparent"
+                        press=".onUserMenuPress"
+                    />
+                    <Button
+                        id="btnNewUser"
+                        text="Novo Usuário"
+                        type="Emphasized"
+                        press=".onNewUser"
+                    />
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+        <f:header>
+            <f:DynamicPageHeader pinnable="false">
             <Toolbar>
                 <SearchField
                     id="searchField"
@@ -46,8 +63,9 @@
                     </items>
                 </Select>
             </Toolbar>
-        </subHeader>
-        <content>
+            </f:DynamicPageHeader>
+        </f:header>
+        <f:content>
             <Table
                 id="usersTable"
                 items="{usersModel>/displayUsers}"
@@ -81,6 +99,6 @@
                     </ColumnListItem>
                 </items>
             </Table>
-        </content>
-    </Page>
+        </f:content>
+    </f:DynamicPage>
 </mvc:View>

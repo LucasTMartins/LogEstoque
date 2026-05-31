@@ -18,6 +18,11 @@ export default class Component extends AppComponent {
 			username: "",
 			fullName: "",
 			canManageMaterials: false,
+			canManageWarehouses: false,
+			canManageDistributionCenters: false,
+			canManageAddresses: false,
+			canViewStocks: false,
+			hasManagementOptions: false,
 			canManageMoviments: false,
 			canApproveMoviments: false,
 			canConcludeMoviments: false,
@@ -47,6 +52,11 @@ export default class Component extends AppComponent {
 				});
 				(this.getModel("userPerms") as JSONModel | undefined)?.setData({
 					canManageMaterials: !!user.canManageMaterials,
+					canManageWarehouses: !!user.canManageWarehouses,
+					canManageDistributionCenters: !!user.canManageDistributionCenters,
+					canManageAddresses: !!user.canManageAddresses,
+					canViewStocks: !!user.canViewStocks,
+					hasManagementOptions: !!user.hasManagementOptions,
 					canManageMoviments: !!user.canManageMoviments,
 					canApproveMoviments: !!user.canApproveMoviments,
 					canConcludeMoviments: !!user.canConcludeMoviments,
@@ -62,6 +72,11 @@ export default class Component extends AppComponent {
 	private _getInitialUserPerms(): Record<string, boolean> {
 		const mDefaults = {
 			canManageMaterials: false,
+			canManageWarehouses: false,
+			canManageDistributionCenters: false,
+			canManageAddresses: false,
+			canViewStocks: false,
+			hasManagementOptions: false,
 			canManageMoviments: false,
 			canApproveMoviments: false,
 			canConcludeMoviments: false,
@@ -83,6 +98,11 @@ export default class Component extends AppComponent {
 
 			return {
 				canManageMaterials: !!payload.canManageMaterials || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				canManageWarehouses: !!payload.canManageWarehouses || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				canManageDistributionCenters: !!payload.canManageDistributionCenters || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				canManageAddresses: !!payload.canManageAddresses || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				canViewStocks: !!payload.canViewStocks || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				hasManagementOptions: !!payload.hasManagementOptions || hasRole("ESTOQUE") || hasRole("ADMIN"),
 				canManageMoviments: !!payload.canManageMoviments || hasRole("ESTOQUE") || hasRole("LOGISTICA") || hasRole("ADMIN"),
 				canApproveMoviments: !!payload.canApproveMoviments || hasRole("APROVACAO") || hasRole("ADMIN"),
 				canConcludeMoviments: !!payload.canConcludeMoviments || hasRole("ESTOQUE") || hasRole("ADMIN"),

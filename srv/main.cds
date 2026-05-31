@@ -70,6 +70,22 @@ service MainService @(requires: 'authenticated-user') {
             active    as ativo
     };
 
+    @readonly
+    @(restrict: [
+        { grant: ['READ'], to: ['ADMIN'] },
+    ])
+    entity ManagedUsers as projection on auth.Users {
+        key ID,
+            username,
+            firstName,
+            lastName,
+            active,
+            createdAt,
+            createdBy,
+            modifiedAt,
+            modifiedBy
+    };
+
     // Cadastro de materiais — leitura para todos, escrita para ESTOQUE e ADMIN
     @(restrict: [
         { grant: ['READ'],                       to: 'authenticated-user'   },
@@ -97,6 +113,11 @@ service MainService @(requires: 'authenticated-user') {
             username            : String(12);
             fullName            : String(121);
             canManageMaterials  : Boolean;
+            canManageWarehouses : Boolean;
+            canManageDistributionCenters : Boolean;
+            canManageAddresses  : Boolean;
+            canViewStocks       : Boolean;
+            hasManagementOptions: Boolean;
             canManageMoviments  : Boolean;
             canApproveMoviments : Boolean;
             canConcludeMoviments: Boolean;
@@ -116,12 +137,84 @@ service MainService @(requires: 'authenticated-user') {
 
     function posicaoEstoque(materialID: UUID) returns array of PosicaoEstoqueItem;
 
-    @readonly entity Warehouses as projection on masterdata.Warehouses {
+    action createDistributionCenterWithAddress(
+        @mandatory code        : String(10),
+        @mandatory name        : String(100),
+        @mandatory street      : String(100),
+        @mandatory number      : String(10),
+        @mandatory district    : String(50),
+        @mandatory town        : String(50),
+        @mandatory state       : String(50),
+        @mandatory country_code: String(3),
+        @mandatory zipCode     : String(9),
+        observation            : String(100),
+        active                 : Boolean
+    ) returns DistributionCenters;
+
+    action createWarehouse(
+        @mandatory code                : String(50),
+        @mandatory name                : String(100),
+        @mandatory capacity            : Integer,
+        @mandatory distributionCenterId: UUID,
+        active                         : Boolean
+    ) returns Warehouses;
+
+    @(restrict: [
+        { grant: ['READ'],                       to: 'authenticated-user'   },
+        { grant: ['CREATE', 'UPDATE'],           to: ['ESTOQUE', 'ADMIN']   },
+        { grant: ['DELETE'],                     to: 'authenticated-user'   },
+        { grant: ['toggleActive'],               to: ['ESTOQUE', 'ADMIN']   },
+    ])
+    entity Warehouses as projection on masterdata.Warehouses {
         key ID,
             code,
             name,
             capacity,
-            active
+            distributionCenter,
+            @mandatory: false active
+    } actions {
+        action toggleActive() returns Warehouses;
+    };
+
+    @(restrict: [
+        { grant: ['READ'],                       to: 'authenticated-user'   },
+        { grant: ['CREATE', 'UPDATE'],           to: ['ESTOQUE', 'ADMIN']   },
+        { grant: ['DELETE'],                     to: 'authenticated-user'   },
+        { grant: ['toggleActive'],               to: ['ESTOQUE', 'ADMIN']   },
+    ])
+    entity DistributionCenters as projection on masterdata.DistributionCenters {
+        key ID,
+            code,
+            name,
+            address,
+            @mandatory: false active
+    } actions {
+        action toggleActive() returns DistributionCenters;
+    };
+
+    @(restrict: [
+        { grant: ['READ'],                       to: 'authenticated-user'   },
+        { grant: ['CREATE', 'UPDATE'],           to: ['ESTOQUE', 'ADMIN']   },
+        { grant: ['DELETE'],                     to: 'authenticated-user'   },
+    ])
+    entity Addresses as projection on masterdata.Addresses {
+        key ID,
+            street,
+            number,
+            district,
+            town,
+            state,
+            country,
+            zipCode,
+            observation,
+            @mandatory: false active
+    };
+
+    @readonly entity Stocks as projection on inventory.Stocks {
+        key ID,
+            material,
+            warehouse,
+            quantity
     };
 
     // View desnormalizada para relatórios (somente leitura)

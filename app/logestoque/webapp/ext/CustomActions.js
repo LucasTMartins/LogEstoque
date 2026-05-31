@@ -6,7 +6,10 @@ sap.ui.define([
     "sap/m/Label",
     "sap/m/Select",
     "sap/m/Switch",
+    "sap/m/CheckBox",
+    "sap/ui/core/CustomData",
     "sap/m/VBox",
+    "sap/m/Title",
     "sap/m/MessageBox",
     "sap/m/MessageToast",
     "sap/ui/core/Item",
@@ -21,7 +24,10 @@ sap.ui.define([
     Label,
     Select,
     Switch,
+    CheckBox,
+    CustomData,
     VBox,
+    Title,
     MessageBox,
     MessageToast,
     Item,
@@ -387,6 +393,142 @@ sap.ui.define([
         });
     }
 
+    function postJson(sUrl, oData) {
+        return fetch(sUrl, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(oData)
+        }).then(function (r) {
+            if (!r.ok) {
+                return r.json().then(function (oJson) {
+                    var oErr = new Error(String(r.status));
+                    oErr.status = r.status;
+                    oErr.responseText = JSON.stringify(oJson);
+                    throw oErr;
+                });
+            }
+            return r.json();
+        });
+    }
+
+    function adminFetch(sUrl, oOptions) {
+        return fetch(sUrl, Object.assign({ credentials: "include" }, oOptions))
+            .then(function (r) {
+                if (!r.ok) {
+                    return r.json().then(function (oJson) {
+                        var oErr = new Error(String(r.status));
+                        oErr.status = r.status;
+                        oErr.responseText = JSON.stringify(oJson);
+                        throw oErr;
+                    }).catch(function (e) {
+                        if (e.status) { throw e; }
+                        var oErr = new Error(String(r.status));
+                        oErr.status = r.status;
+                        throw oErr;
+                    });
+                }
+                var sContentType = r.headers.get("content-type") || "";
+                return sContentType.indexOf("json") !== -1 ? r.json() : true;
+            });
+    }
+
+    function getUserSelectedContext(oEvent, oContext) {
+        var aContexts = [];
+        var oSource = getSource(oEvent);
+        var oOwnerComponent = getOwnerComponent(oContext, oEvent);
+
+        if (!aContexts.length && oContext && oContext.base && oContext.base.byId) {
+            var oTableById = oContext.base.byId("fe::table::ManagedUsers::LineItem");
+            if (oTableById && oTableById.getSelectedContexts) {
+                aContexts = oTableById.getSelectedContexts() || [];
+            }
+        }
+
+        if (!aContexts.length && oSource) {
+            aContexts = getSelectedContexts(getParentTable(oSource));
+        }
+
+        if (!aContexts.length) {
+            try {
+                sap.ui.core.Element.registry.forEach(function (oEl) {
+                    if (!aContexts.length && oEl.isA && oEl.isA("sap.ui.mdc.Table") && oEl.getSelectedContexts) {
+                        var aFound = oEl.getSelectedContexts();
+                        if (aFound && aFound.length) {
+                            aContexts = aFound;
+                        }
+                    }
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        if (!aContexts.length && oOwnerComponent && oOwnerComponent.byId) {
+            var oTable = oOwnerComponent.byId("fe::table::ManagedUsers::LineItem");
+            if (oTable && oTable.getSelectedContexts) {
+                aContexts = oTable.getSelectedContexts() || [];
+            }
+        }
+
+        return aContexts.length ? aContexts[0] : null;
+    }
+
+    function refreshUserList(oContext, oEvent) {
+        var oModel = getDefaultModel(oContext, oEvent);
+        refreshAfterCreate(oModel);
+    }
+
+    function openUserDialog(oContext, bCreate, oUser, aAllPerms) {
+        var sTitle = bCreate ? "Novo Usuário" : "Editar Usuário: " + (oUser && oUser.username);
+        var oActiveSwitch = new Switch({ state: bCreate ? true : !!(oUser && oUser.active) });
+        var oFirstName = new Input({ value: bCreate ? "" : (oUser && oUser.firstName) || "", width: "100%" });
+        var oLastName = new Input({ value: bCreate ? "" : (oUser && oUser.lastName) || "", width: "100%" });
+        var oUsername = new Input({
+            value: bCreate ? "" : (oUser && oUser.username) || "",
+            editable: !!bCreate,
+            width: "100%"
+        });
+        var oPassword = bCreate ? new Input({ type: "Password", width: "100%" }) : null;
+        var oConfirm = bCreate ? new Input({ type: "Password", width: "100%" }) : null;
+
+        var oUserPermIds = {};
+        if (oUser && oUser.permissions) {
+            oUser.permissions.forEach(function (p) {
+                oUserPermIds[p.permission_ID] = true;
+            });
+        }
+
+        var aCheckBoxes = (aAllPerms || []).map(function (perm) {
+            return new CheckBox({
+                text: perm.name,
+                selected: !!oUserPermIds[perm.ID],
+                customData: [new CustomData({ key: "permId", value: perm.ID })]
+            });
+        });
+
+        var aItems = [
+            new Label({ text: "Ativo" }),
+            oActiveSwitch,
+            new Label({ text: "Nome", required: true }),
+            oFirstName,
+            new Label({ text: "Sobrenome", required: true }),
+            oLastName,
+            new Label({ text: "Usuário", required: !!bCreate }),
+            oUsername
+        ];
+
+        if (bCreate) {
+            aItems.push(new Label({ text: "Senha", required: true }), oPassword);
+            aItems.push(new Label({ text: "Confirmar Senha", required: true }), oConfirm);
+        }
+
+        aItems.push(new Title({ text: "Permissões", level: "H6" }).addStyleClass("sapUiSmallMarginTop"));
+        aCheckBoxes.forEach(function (oCheckBox) {
+            aItems.push(oCheckBox);
+        });
+
+        return { title: sTitle, activeSwitch: oActiveSwitch, firstName: oFirstName, lastName: oLastName, username: oUsername, password: oPassword, confirm: oConfirm, checkBoxes: aCheckBoxes, items: aItems };
+    }
+
     function makeSearchComboBox(placeholder) {
         return new ComboBox({
             width: "100%",
@@ -417,6 +559,543 @@ sap.ui.define([
             }
 
             navigateToRoute(this, oEvent, "UserManagement");
+        },
+
+        onCreateUser: function (oEvent) {
+            var oModel = getDefaultModel(this, oEvent);
+
+            if (!oModel) {
+                MessageBox.error("Não foi possível acessar o modelo de dados.");
+                return;
+            }
+
+            adminFetch("/odata/v4/admin/Permissions?$orderby=name&$top=100")
+                .then(function (oData) {
+                    var oForm = openUserDialog(this, true, null, oData.value || []);
+                    var oDialog = new Dialog({
+                        title: oForm.title,
+                        contentWidth: "30rem",
+                        verticalScrolling: true,
+                        content: new VBox({
+                            width: "100%",
+                            renderType: "Bare",
+                            items: oForm.items
+                        }).addStyleClass("sapUiSmallMargin"),
+                        beginButton: new Button({
+                            text: "Criar",
+                            type: "Emphasized",
+                            press: function () {
+                                var aInputs = [oForm.firstName, oForm.lastName, oForm.username, oForm.password, oForm.confirm];
+                                var bValid = true;
+                                aInputs.forEach(function (oInput) {
+                                    if (oInput) { oInput.setValueState("None"); }
+                                });
+
+                                if (!oForm.firstName.getValue().trim()) {
+                                    oForm.firstName.setValueState("Error");
+                                    oForm.firstName.setValueStateText("Nome é obrigatório.");
+                                    bValid = false;
+                                }
+                                if (!oForm.lastName.getValue().trim()) {
+                                    oForm.lastName.setValueState("Error");
+                                    oForm.lastName.setValueStateText("Sobrenome é obrigatório.");
+                                    bValid = false;
+                                }
+                                var sUsername = oForm.username.getValue().trim();
+                                if (!sUsername || !/^[a-zA-Z0-9._-]{3,12}$/.test(sUsername)) {
+                                    oForm.username.setValueState("Error");
+                                    oForm.username.setValueStateText("Username: 3-12 caracteres (letras, números, ., _, -).");
+                                    bValid = false;
+                                }
+                                if (!oForm.password.getValue() || oForm.password.getValue().length < 8) {
+                                    oForm.password.setValueState("Error");
+                                    oForm.password.setValueStateText("Mínimo 8 caracteres.");
+                                    bValid = false;
+                                } else if (oForm.password.getValue() !== oForm.confirm.getValue()) {
+                                    oForm.confirm.setValueState("Error");
+                                    oForm.confirm.setValueStateText("As senhas não coincidem.");
+                                    bValid = false;
+                                }
+                                if (!bValid) { return; }
+
+                                oDialog.setBusy(true);
+                                postJson("/odata/v4/admin/createUser", {
+                                    username: sUsername,
+                                    firstName: oForm.firstName.getValue().trim(),
+                                    lastName: oForm.lastName.getValue().trim(),
+                                    password: oForm.password.getValue(),
+                                    active: oForm.activeSwitch.getState(),
+                                    permissions: oForm.checkBoxes
+                                        .filter(function (oCheckBox) { return oCheckBox.getSelected(); })
+                                        .map(function (oCheckBox) { return oCheckBox.data("permId"); })
+                                }).then(function () {
+                                    MessageToast.show("Usuário criado com sucesso.");
+                                    oDialog.close();
+                                    refreshUserList(this, oEvent);
+                                }.bind(this)).catch(function (oError) {
+                                    MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível criar o usuário.");
+                                }).finally(function () {
+                                    oDialog.setBusy(false);
+                                });
+                            }.bind(this)
+                        }),
+                        endButton: new Button({
+                            text: "Cancelar",
+                            press: function () { oDialog.close(); }
+                        }),
+                        afterClose: function () { oDialog.destroy(); }
+                    });
+
+                    oDialog.open();
+                }.bind(this))
+                .catch(function (oError) {
+                    MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível carregar as permissões.");
+                });
+        },
+
+        onEditUser: function (oEvent) {
+            var oContext = getUserSelectedContext(oEvent, this);
+
+            if (!oContext) {
+                MessageBox.warning("Selecione um usuário para editar.");
+                return;
+            }
+
+            var oUser = oContext.getObject();
+            if (!oUser || !oUser.ID) {
+                MessageBox.warning("Selecione um usuário válido.");
+                return;
+            }
+
+            Promise.all([
+                adminFetch("/odata/v4/admin/Users(" + oUser.ID + ")?$expand=permissions($expand=permission)"),
+                adminFetch("/odata/v4/admin/Permissions?$orderby=name&$top=100")
+            ]).then(function (aResults) {
+                var oLoadedUser = aResults[0];
+                var aPerms = aResults[1].value || [];
+                var oForm = openUserDialog(this, false, oLoadedUser, aPerms);
+                var oDialog = new Dialog({
+                    title: oForm.title,
+                    contentWidth: "30rem",
+                    verticalScrolling: true,
+                    content: new VBox({
+                        width: "100%",
+                        renderType: "Bare",
+                        items: oForm.items
+                    }).addStyleClass("sapUiSmallMargin"),
+                    beginButton: new Button({
+                        text: "Salvar",
+                        type: "Emphasized",
+                        press: function () {
+                            var bValid = true;
+                            [oForm.firstName, oForm.lastName, oForm.username].forEach(function (oInput) {
+                                oInput.setValueState("None");
+                            });
+                            if (!oForm.firstName.getValue().trim()) {
+                                oForm.firstName.setValueState("Error");
+                                oForm.firstName.setValueStateText("Nome é obrigatório.");
+                                bValid = false;
+                            }
+                            if (!oForm.lastName.getValue().trim()) {
+                                oForm.lastName.setValueState("Error");
+                                oForm.lastName.setValueStateText("Sobrenome é obrigatório.");
+                                bValid = false;
+                            }
+                            if (!bValid) { return; }
+
+                            oDialog.setBusy(true);
+                            var aSteps = [
+                                adminFetch("/odata/v4/admin/Users(" + oLoadedUser.ID + ")", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        firstName: oForm.firstName.getValue().trim(),
+                                        lastName: oForm.lastName.getValue().trim()
+                                    })
+                                })
+                            ];
+
+                            if (!!oForm.activeSwitch.getState() !== !!oLoadedUser.active) {
+                                aSteps.push(adminFetch("/odata/v4/admin/Users(" + oLoadedUser.ID + ")/AdminService.toggleActive", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: "{}"
+                                }));
+                            }
+
+                            var oOldPermIds = {};
+                            (oLoadedUser.permissions || []).forEach(function (p) {
+                                oOldPermIds[p.permission_ID] = true;
+                            });
+
+                            oForm.checkBoxes.forEach(function (oCheckBox) {
+                                var sPermId = oCheckBox.data("permId");
+                                var bChecked = oCheckBox.getSelected();
+                                var bHad = !!oOldPermIds[sPermId];
+                                if (bChecked && !bHad) {
+                                    aSteps.push(adminFetch("/odata/v4/admin/Users(" + oLoadedUser.ID + ")/AdminService.assignPermission", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ permissionId: sPermId })
+                                    }));
+                                } else if (!bChecked && bHad) {
+                                    aSteps.push(adminFetch("/odata/v4/admin/Users(" + oLoadedUser.ID + ")/AdminService.revokePermission", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ permissionId: sPermId })
+                                    }));
+                                }
+                            });
+
+                            Promise.all(aSteps).then(function () {
+                                MessageToast.show("Usuário atualizado.");
+                                oDialog.close();
+                                refreshUserList(this, oEvent);
+                            }.bind(this)).catch(function (oError) {
+                                MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível salvar as alterações.");
+                            }).finally(function () {
+                                oDialog.setBusy(false);
+                            });
+                        }.bind(this)
+                    }),
+                    endButton: new Button({
+                        text: "Cancelar",
+                        press: function () { oDialog.close(); }
+                    }),
+                    afterClose: function () { oDialog.destroy(); }
+                });
+
+                oDialog.open();
+            }.bind(this)).catch(function (oError) {
+                MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível carregar o usuário.");
+            });
+        },
+
+        onResetUserPassword: function (oEvent) {
+            var oContext = getUserSelectedContext(oEvent, this);
+
+            if (!oContext) {
+                MessageBox.warning("Selecione um usuário para redefinir a senha.");
+                return;
+            }
+
+            var oUser = oContext.getObject();
+            if (!oUser || !oUser.ID) {
+                MessageBox.warning("Selecione um usuário válido.");
+                return;
+            }
+
+            var oPassword = new Input({ type: "Password", width: "100%" });
+            var oConfirm = new Input({ type: "Password", width: "100%" });
+            var oDialog = new Dialog({
+                title: "Redefinir Senha: " + (oUser.username || ""),
+                contentWidth: "26rem",
+                content: new VBox({
+                    width: "100%",
+                    renderType: "Bare",
+                    items: [
+                        new Label({ text: "Nova Senha", required: true }),
+                        oPassword,
+                        new Label({ text: "Confirmar Senha", required: true }),
+                        oConfirm,
+                        new Title({ text: "Mínimo 8 caracteres.", level: "H6" })
+                    ]
+                }).addStyleClass("sapUiSmallMargin"),
+                beginButton: new Button({
+                    text: "Confirmar",
+                    type: "Emphasized",
+                    press: function () {
+                        oPassword.setValueState("None");
+                        oConfirm.setValueState("None");
+
+                        var sPassword = oPassword.getValue();
+                        if (!sPassword || sPassword.length < 8) {
+                            oPassword.setValueState("Error");
+                            oPassword.setValueStateText("Mínimo 8 caracteres.");
+                            return;
+                        }
+                        if (sPassword !== oConfirm.getValue()) {
+                            oConfirm.setValueState("Error");
+                            oConfirm.setValueStateText("As senhas não coincidem.");
+                            return;
+                        }
+
+                        oDialog.setBusy(true);
+                        adminFetch("/odata/v4/admin/Users(" + oUser.ID + ")/AdminService.resetPassword", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ newPassword: sPassword })
+                        }).then(function () {
+                            MessageToast.show("Senha redefinida com sucesso.");
+                            oDialog.close();
+                        }).catch(function (oError) {
+                            MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível redefinir a senha.");
+                        }).finally(function () {
+                            oDialog.setBusy(false);
+                        });
+                    }
+                }),
+                endButton: new Button({
+                    text: "Cancelar",
+                    press: function () { oDialog.close(); }
+                }),
+                afterClose: function () { oDialog.destroy(); }
+            });
+
+            oDialog.open();
+        },
+
+        onCreateWarehouse: function (oEvent) {
+            var oModel = getDefaultModel(this, oEvent);
+
+            if (!oModel) {
+                MessageBox.error("Não foi possível acessar o modelo de dados.");
+                return;
+            }
+
+            var oCode = new Input({ width: "100%", placeholder: "W001" });
+            var oName = new Input({ width: "100%", placeholder: "Depósito Central" });
+            var oCapacity = new Input({ type: "Number", width: "100%", placeholder: "1000" });
+            var oDistributionCenter = makeSearchComboBox("Selecione um centro de distribuição...");
+            var oActive = new Switch({ state: true });
+
+            function resetStates() {
+                [oCode, oName, oCapacity, oDistributionCenter].forEach(function (oInput) {
+                    oInput.setValueState("None");
+                    oInput.setValueStateText("");
+                });
+            }
+
+            fetch("/odata/v4/main/DistributionCenters?$filter=active eq true&$select=ID,code,name&$orderby=code&$top=200", {
+                credentials: "include"
+            }).then(function (r) {
+                return r.ok ? r.json() : { value: [] };
+            }).then(function (oData) {
+                populateComboBox(oDistributionCenter, oData.value || [], function (dc) {
+                    return dc.code + " - " + dc.name;
+                });
+            }).catch(function () {
+                MessageToast.show("Não foi possível carregar centros de distribuição.");
+            });
+
+            var oDialog = new Dialog({
+                title: "Novo Depósito",
+                contentWidth: "32rem",
+                resizable: true,
+                horizontalScrolling: false,
+                content: new VBox({
+                    width: "100%",
+                    renderType: "Bare",
+                    items: [
+                        createLabel("Código"),
+                        oCode,
+                        createLabel("Nome"),
+                        oName,
+                        createLabel("Capacidade"),
+                        oCapacity,
+                        createLabel("Centro de Distribuição"),
+                        oDistributionCenter,
+                        new Label({ text: "Ativo" }),
+                        oActive
+                    ]
+                }).addStyleClass("sapUiSmallMarginTopBottom"),
+                beginButton: new Button({
+                    text: "Criar",
+                    type: "Emphasized",
+                    press: function () {
+                        var sCode = oCode.getValue().trim();
+                        var sName = oName.getValue().trim();
+                        var sCapacity = oCapacity.getValue().trim();
+                        var iCapacity = parseInt(sCapacity, 10);
+                        var sDistributionCenterId = oDistributionCenter.getSelectedKey();
+                        var bValid = true;
+
+                        resetStates();
+
+                        if (!sCode || !/^[A-Z0-9_-]+$/.test(sCode)) {
+                            oCode.setValueState("Error");
+                            oCode.setValueStateText("Use apenas letras maiúsculas, números, _ ou -.");
+                            bValid = false;
+                        }
+                        if (!sName) {
+                            oName.setValueState("Error");
+                            oName.setValueStateText("Nome é obrigatório.");
+                            bValid = false;
+                        }
+                        if (!sCapacity || isNaN(iCapacity) || iCapacity < 0) {
+                            oCapacity.setValueState("Error");
+                            oCapacity.setValueStateText("Informe uma capacidade maior ou igual a zero.");
+                            bValid = false;
+                        }
+                        if (!sDistributionCenterId) {
+                            oDistributionCenter.setValueState("Error");
+                            oDistributionCenter.setValueStateText("Selecione um centro de distribuição existente.");
+                            bValid = false;
+                        }
+
+                        if (!bValid) { return; }
+
+                        oDialog.setBusy(true);
+                        postJson("/odata/v4/main/createWarehouse", {
+                            code: sCode,
+                            name: sName,
+                            capacity: iCapacity,
+                            distributionCenterId: sDistributionCenterId,
+                            active: oActive.getState()
+                        }).then(function () {
+                            MessageToast.show("Depósito criado.");
+                            oDialog.close();
+                            refreshAfterCreate(oModel);
+                        }).catch(function (oError) {
+                            MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível criar o depósito.");
+                        }).finally(function () {
+                            oDialog.setBusy(false);
+                        });
+                    }
+                }),
+                endButton: new Button({
+                    text: "Cancelar",
+                    press: function () { oDialog.close(); }
+                }),
+                afterClose: function () { oDialog.destroy(); }
+            });
+
+            oDialog.open();
+        },
+
+        onCreateDistributionCenter: function (oEvent) {
+            var oModel = getDefaultModel(this, oEvent);
+
+            if (!oModel) {
+                MessageBox.error("Não foi possível acessar o modelo de dados.");
+                return;
+            }
+
+            var oCode = new Input({ width: "100%", placeholder: "D001" });
+            var oName = new Input({ width: "100%", placeholder: "CD São Paulo" });
+            var oStreet = new Input({ width: "100%" });
+            var oNumber = new Input({ width: "100%" });
+            var oDistrict = new Input({ width: "100%" });
+            var oTown = new Input({ width: "100%" });
+            var oState = new Input({ width: "100%", placeholder: "SP" });
+            var oCountry = new Input({ width: "100%", value: "032" });
+            var oZipCode = new Input({ width: "100%", placeholder: "01310-100" });
+            var oObservation = new Input({ width: "100%" });
+            var oActive = new Switch({ state: true });
+
+            function resetStates() {
+                [oCode, oName, oStreet, oNumber, oDistrict, oTown, oState, oCountry, oZipCode].forEach(function (oInput) {
+                    oInput.setValueState("None");
+                    oInput.setValueStateText("");
+                });
+            }
+
+            function requireValue(oInput, sMessage) {
+                if (oInput.getValue().trim()) { return true; }
+                oInput.setValueState("Error");
+                oInput.setValueStateText(sMessage);
+                return false;
+            }
+
+            var oDialog = new Dialog({
+                title: "Novo Centro de Distribuição",
+                contentWidth: "36rem",
+                resizable: true,
+                horizontalScrolling: false,
+                content: new VBox({
+                    width: "100%",
+                    renderType: "Bare",
+                    items: [
+                        createLabel("Código"),
+                        oCode,
+                        createLabel("Nome"),
+                        oName,
+                        createLabel("Logradouro"),
+                        oStreet,
+                        createLabel("Número"),
+                        oNumber,
+                        createLabel("Bairro"),
+                        oDistrict,
+                        createLabel("Cidade"),
+                        oTown,
+                        createLabel("UF"),
+                        oState,
+                        createLabel("País"),
+                        oCountry,
+                        createLabel("CEP"),
+                        oZipCode,
+                        new Label({ text: "Observação" }),
+                        oObservation,
+                        new Label({ text: "Ativo" }),
+                        oActive
+                    ]
+                }).addStyleClass("sapUiSmallMarginTopBottom"),
+                beginButton: new Button({
+                    text: "Criar",
+                    type: "Emphasized",
+                    press: function () {
+                        var bValid;
+                        var sCode = oCode.getValue().trim();
+                        var sZipCode = oZipCode.getValue().trim();
+
+                        resetStates();
+                        bValid = [
+                            requireValue(oCode, "Código é obrigatório."),
+                            requireValue(oName, "Nome é obrigatório."),
+                            requireValue(oStreet, "Logradouro é obrigatório."),
+                            requireValue(oNumber, "Número é obrigatório."),
+                            requireValue(oDistrict, "Bairro é obrigatório."),
+                            requireValue(oTown, "Cidade é obrigatória."),
+                            requireValue(oState, "UF é obrigatória."),
+                            requireValue(oCountry, "País é obrigatório."),
+                            requireValue(oZipCode, "CEP é obrigatório.")
+                        ].every(Boolean);
+
+                        if (sCode && !/^[A-Z0-9_-]+$/.test(sCode)) {
+                            oCode.setValueState("Error");
+                            oCode.setValueStateText("Use apenas letras maiúsculas, números, _ ou -.");
+                            bValid = false;
+                        }
+                        if (sZipCode && !/^[0-9]{5}-?[0-9]{3}$/.test(sZipCode)) {
+                            oZipCode.setValueState("Error");
+                            oZipCode.setValueStateText("Informe um CEP válido.");
+                            bValid = false;
+                        }
+
+                        if (!bValid) { return; }
+
+                        oDialog.setBusy(true);
+                        postJson("/odata/v4/main/createDistributionCenterWithAddress", {
+                            code: sCode,
+                            name: oName.getValue().trim(),
+                            street: oStreet.getValue().trim(),
+                            number: oNumber.getValue().trim(),
+                            district: oDistrict.getValue().trim(),
+                            town: oTown.getValue().trim(),
+                            state: oState.getValue().trim(),
+                            country_code: oCountry.getValue().trim(),
+                            zipCode: sZipCode,
+                            observation: oObservation.getValue().trim() || null,
+                            active: oActive.getState()
+                        }).then(function () {
+                            MessageToast.show("Centro de distribuição criado.");
+                            oDialog.close();
+                            refreshAfterCreate(oModel);
+                        }).catch(function (oError) {
+                            MessageBox.error(getBackendErrorMessage(oError) || "Não foi possível criar o centro de distribuição.");
+                        }).finally(function () {
+                            oDialog.setBusy(false);
+                        });
+                    }
+                }),
+                endButton: new Button({
+                    text: "Cancelar",
+                    press: function () { oDialog.close(); }
+                }),
+                afterClose: function () { oDialog.destroy(); }
+            });
+
+            oDialog.open();
         },
 
         onCreateMoviment: function (oEvent) {

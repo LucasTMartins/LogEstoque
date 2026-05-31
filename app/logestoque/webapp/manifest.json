@@ -60,6 +60,18 @@
           "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::MaterialsList": {
             "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
           },
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::WarehousesList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
+          },
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::DistributionCentersList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
+          },
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::StocksList": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
+          },
+          "sap.fe.templates.ListReport.ListReportController#br.dev.imlucas.logestoque::UserManagement": {
+            "controllerName": "br.dev.imlucas.logestoque.ext.MaterialsListController"
+          },
           "sap.fe.templates.ObjectPage.ObjectPageController#br.dev.imlucas.logestoque::MovimentsObjectPage": {
             "controllerName": "br.dev.imlucas.logestoque.ext.MovimentsObjectPageController"
           }
@@ -70,6 +82,7 @@
       "minUI5Version": "1.148.0",
       "libs": {
         "sap.m": {},
+        "sap.f": {},
         "sap.ui.core": {},
         "sap.fe.templates": {}
       }
@@ -124,7 +137,22 @@
           "target": "MaterialsList"
         },
         {
-          "pattern": "admin/users",
+          "pattern": "Warehouses:?query:",
+          "name": "WarehousesList",
+          "target": "WarehousesList"
+        },
+        {
+          "pattern": "DistributionCenters:?query:",
+          "name": "DistributionCentersList",
+          "target": "DistributionCentersList"
+        },
+        {
+          "pattern": "Stocks:?query:",
+          "name": "StocksList",
+          "target": "StocksList"
+        },
+        {
+          "pattern": "ManagedUsers:?query:",
           "name": "UserManagement",
           "target": "UserManagement"
         }
@@ -157,18 +185,6 @@
                       "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateMoviment",
                       "text": "Nova Movimentação",
                       "visible": "{userPerms>/canManageMoviments}",
-                      "requiresSelection": false
-                    },
-                    "ManageMaterials": {
-                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageMaterials",
-                      "text": "Gerenciar Materiais",
-                      "visible": "{userPerms>/canManageMaterials}",
-                      "requiresSelection": false
-                    },
-                    "ManageUsers": {
-                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onManageUsers",
-                      "text": "Gerenciar Usuários",
-                      "visible": "{userPerms>/isAdmin}",
                       "requiresSelection": false
                     }
                   }
@@ -226,9 +242,120 @@
           }
         },
         "UserManagement": {
-          "type": "View",
+          "type": "Component",
           "id": "UserManagement",
-          "name": "br.dev.imlucas.logestoque.admin.UsersManagement"
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/ManagedUsers",
+              "initialLoad": "Enabled",
+              "variantManagement": "None",
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Single"
+                  },
+                  "actions": {
+                    "CreateManagedUser": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateUser",
+                      "text": "Novo Usuário",
+                      "enabled": "{userPerms>/isAdmin}",
+                      "requiresSelection": false
+                    },
+                    "EditManagedUser": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onEditUser",
+                      "text": "Editar Usuário",
+                      "enabled": "{userPerms>/isAdmin}",
+                      "requiresSelection": true
+                    },
+                    "ResetManagedUserPassword": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onResetUserPassword",
+                      "text": "Redefinir Senha",
+                      "enabled": "{userPerms>/isAdmin}",
+                      "requiresSelection": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "WarehousesList": {
+          "type": "Component",
+          "id": "WarehousesList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Warehouses",
+              "initialLoad": "Enabled",
+              "variantManagement": "None",
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Multi"
+                  },
+                  "actions": {
+                    "CreateWarehouse": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateWarehouse",
+                      "text": "Novo Depósito",
+                      "enabled": "{userPerms>/canManageWarehouses}",
+                      "requiresSelection": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "DistributionCentersList": {
+          "type": "Component",
+          "id": "DistributionCentersList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/DistributionCenters",
+              "initialLoad": "Enabled",
+              "variantManagement": "None",
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "Single"
+                  },
+                  "actions": {
+                    "CreateDistributionCenter": {
+                      "press": "br.dev.imlucas.logestoque.ext.CustomActions.onCreateDistributionCenter",
+                      "text": "Novo Centro de Distribuição",
+                      "enabled": "{userPerms>/canManageDistributionCenters}",
+                      "requiresSelection": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "StocksList": {
+          "type": "Component",
+          "id": "StocksList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Stocks",
+              "initialLoad": "Enabled",
+              "variantManagement": "None",
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "None"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

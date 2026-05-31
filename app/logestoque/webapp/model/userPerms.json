@@ -1,5 +1,10 @@
 {
   "canManageMaterials": false,
+  "canManageWarehouses": false,
+  "canManageDistributionCenters": false,
+  "canManageAddresses": false,
+  "canViewStocks": false,
+  "hasManagementOptions": false,
   "canManageMoviments": false,
   "canApproveMoviments": false,
   "canConcludeMoviments": false,

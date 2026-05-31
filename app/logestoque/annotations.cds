@@ -322,6 +322,43 @@ annotate service.Moviments with {
     quantity             @title: 'Quantidade';
 }
 
+// ─── ManagedUsers — gerenciamento de usuários ────────────────────────────────
+
+annotate service.ManagedUsers with @(
+    Capabilities.InsertRestrictions: { Insertable: false },
+    Capabilities.UpdateRestrictions: { Updatable:  false },
+    Capabilities.DeleteRestrictions: { Deletable:  false },
+);
+
+annotate service.ManagedUsers with {
+    ID         @UI.Hidden;
+    username   @title: 'Usuário';
+    firstName  @title: 'Nome';
+    lastName   @title: 'Sobrenome';
+    active     @title: 'Ativo';
+    createdAt  @title: 'Criado Em';
+    createdBy  @title: 'Criado Por';
+    modifiedAt @title: 'Alterado Em';
+    modifiedBy @title: 'Alterado Por';
+}
+
+annotate service.ManagedUsers with @(
+    UI.HeaderInfo      : {
+        TypeName      : 'Usuário',
+        TypeNamePlural: 'Usuários',
+        Title         : { $Type: 'UI.DataField', Value: username },
+        Description   : { $Type: 'UI.DataField', Value: firstName },
+    },
+    UI.SelectionFields : [username, firstName, lastName, active],
+    UI.LineItem        : [
+        { $Type: 'UI.DataField', Value: username, Label: 'Usuário' },
+        { $Type: 'UI.DataField', Value: firstName, Label: 'Nome' },
+        { $Type: 'UI.DataField', Value: lastName, Label: 'Sobrenome' },
+        { $Type: 'UI.DataField', Value: active, Label: 'Ativo' },
+        { $Type: 'UI.DataField', Value: modifiedAt, Label: 'Alterado Em' },
+    ],
+);
+
 // ─── Materials — cadastro de materiais ───────────────────────────────────────
 
 annotate service.Materials with @(
@@ -405,6 +442,129 @@ annotate service.Materials with @(
             Action: 'MainService.toggleActive',
             Label : 'Ativar/Desativar',
         },
+    ],
+);
+
+// ─── Warehouses — cadastro de depósitos/armazéns ─────────────────────────────
+
+annotate service.Warehouses with @(
+    Capabilities.InsertRestrictions: { Insertable: false },
+    Capabilities.UpdateRestrictions: { Updatable:  true },
+    Capabilities.DeleteRestrictions: { Deletable:  true },
+);
+
+annotate service.Warehouses with {
+    ID                 @UI.Hidden;
+    code               @title: 'Código';
+    name               @title: 'Nome';
+    capacity           @title: 'Capacidade';
+    distributionCenter @title: 'Centro de Distribuição' @(
+        Common.Text     : distributionCenter.name,
+        Common.ValueList: {
+            $Type         : 'Common.ValueListType',
+            CollectionPath: 'DistributionCenters',
+            Parameters    : [
+                {
+                    $Type            : 'Common.ValueListParameterOut',
+                    LocalDataProperty: distributionCenter_ID,
+                    ValueListProperty: 'ID',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'code',
+                },
+                {
+                    $Type            : 'Common.ValueListParameterDisplayOnly',
+                    ValueListProperty: 'name',
+                },
+            ],
+        },
+    );
+    active             @title: 'Ativo';
+}
+
+annotate service.Warehouses with @(
+    UI.HeaderInfo      : {
+        TypeName      : 'Depósito/Armazém',
+        TypeNamePlural: 'Depósitos/Armazéns',
+        Title         : { $Type: 'UI.DataField', Value: code },
+        Description   : { $Type: 'UI.DataField', Value: name },
+    },
+    UI.SelectionFields : [code, name, distributionCenter, active],
+    UI.LineItem        : [
+        { $Type: 'UI.DataField', Value: code, Label: 'Código' },
+        { $Type: 'UI.DataField', Value: name, Label: 'Nome' },
+        { $Type: 'UI.DataField', Value: capacity, Label: 'Capacidade' },
+        { $Type: 'UI.DataField', Value: distributionCenter.code, Label: 'CD' },
+        { $Type: 'UI.DataField', Value: distributionCenter.name, Label: 'Centro de Distribuição' },
+        { $Type: 'UI.DataField', Value: active, Label: 'Ativo' },
+        { $Type: 'UI.DataFieldForAction', Action: 'MainService.toggleActive', Label: 'Ativar/Desativar' },
+    ],
+);
+
+// ─── DistributionCenters — cadastro de centros de distribuição ───────────────
+
+annotate service.DistributionCenters with @(
+    Capabilities.InsertRestrictions: { Insertable: false },
+    Capabilities.UpdateRestrictions: { Updatable:  true },
+    Capabilities.DeleteRestrictions: { Deletable:  true },
+);
+
+annotate service.DistributionCenters with {
+    ID      @UI.Hidden;
+    code    @title: 'Código';
+    name    @title: 'Nome';
+    address @title: 'Endereço';
+    active  @title: 'Ativo';
+}
+
+annotate service.DistributionCenters with @(
+    UI.HeaderInfo      : {
+        TypeName      : 'Centro de Distribuição',
+        TypeNamePlural: 'Centros de Distribuição',
+        Title         : { $Type: 'UI.DataField', Value: code },
+        Description   : { $Type: 'UI.DataField', Value: name },
+    },
+    UI.SelectionFields : [code, name, active],
+    UI.LineItem        : [
+        { $Type: 'UI.DataField', Value: code, Label: 'Código' },
+        { $Type: 'UI.DataField', Value: name, Label: 'Nome' },
+        { $Type: 'UI.DataField', Value: address.town, Label: 'Cidade' },
+        { $Type: 'UI.DataField', Value: address.state, Label: 'UF' },
+        { $Type: 'UI.DataField', Value: active, Label: 'Ativo' },
+        { $Type: 'UI.DataFieldForAction', Action: 'MainService.toggleActive', Label: 'Ativar/Desativar' },
+    ],
+);
+
+// ─── Stocks — posição atual de estoque ───────────────────────────────────────
+
+annotate service.Stocks with @(
+    Capabilities.InsertRestrictions: { Insertable: false },
+    Capabilities.UpdateRestrictions: { Updatable:  false },
+    Capabilities.DeleteRestrictions: { Deletable:  false },
+);
+
+annotate service.Stocks with {
+    ID        @UI.Hidden;
+    material  @title: 'Material' @Common.Text: material.description;
+    warehouse @title: 'Depósito/Armazém' @Common.Text: warehouse.name;
+    quantity  @title: 'Quantidade';
+}
+
+annotate service.Stocks with @(
+    UI.HeaderInfo      : {
+        TypeName      : 'Estoque',
+        TypeNamePlural: 'Estoques',
+        Title         : { $Type: 'UI.DataField', Value: material.code },
+        Description   : { $Type: 'UI.DataField', Value: warehouse.code },
+    },
+    UI.SelectionFields : [material, warehouse],
+    UI.LineItem        : [
+        { $Type: 'UI.DataField', Value: material.code, Label: 'Material' },
+        { $Type: 'UI.DataField', Value: material.description, Label: 'Descrição' },
+        { $Type: 'UI.DataField', Value: warehouse.code, Label: 'Depósito' },
+        { $Type: 'UI.DataField', Value: warehouse.name, Label: 'Nome do Depósito' },
+        { $Type: 'UI.DataField', Value: quantity, Label: 'Quantidade' },
     ],
 );
 

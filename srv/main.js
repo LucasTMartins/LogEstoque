@@ -10,12 +10,16 @@ module.exports = class MainService extends cds.ApplicationService {
     async init() {
 
         const { Moviments, Stocks, StockHistory } = cds.entities('db.inventory');
-        const { Warehouses, Materials }           = cds.entities('db.masterdata');
+        const { Warehouses, Materials, DistributionCenters, Addresses } = cds.entities('db.masterdata');
         const { Users, UserPermissions }          = cds.entities('db.auth');
 
         // ── Cadastro de materiais ───────────────────────────────────────────
 
         const canManageMaterials = (req) => {
+            return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
+        };
+
+        const canManageMasterData = (req) => {
             return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
         };
 
@@ -70,6 +74,161 @@ module.exports = class MainService extends cds.ApplicationService {
             return SELECT.one.from(Materials).where({ ID });
         });
 
+        // ── Cadastros mestres: depósitos/armazéns, CDs e endereços ─────────
+
+        this.before('CREATE', ['Warehouses', 'DistributionCenters', 'Addresses'], (req) => {
+            if (req.data.active === undefined || req.data.active === null) {
+                req.data.active = true;
+            }
+        });
+
+        this.on('DELETE', 'Warehouses', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para excluir depósitos/armazéns.');
+            }
+
+            const { ID } = req.params[0];
+            const warehouse = await SELECT.one.from(Warehouses).where({ ID });
+            if (!warehouse) return req.error(404, 'Depósito/armazém não encontrado.');
+
+            const stockExists = await SELECT.one.from(Stocks).where({ warehouse_ID: ID });
+            const originMovimentExists = await SELECT.one.from(Moviments).where({ originWarehouse_ID: ID });
+            const destinationMovimentExists = await SELECT.one.from(Moviments).where({ destinationWarehouse_ID: ID });
+            if (stockExists || originMovimentExists || destinationMovimentExists) {
+                return req.error(409, 'Este depósito/armazém está em uso e não pode ser excluído.');
+            }
+
+            await DELETE.from(Warehouses).where({ ID });
+            return req.reply();
+        });
+
+        this.on('toggleActive', 'Warehouses', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para ativar/desativar depósitos/armazéns.');
+            }
+            const { ID } = req.params[0];
+            const warehouse = await SELECT.one.from(Warehouses).where({ ID });
+            if (!warehouse) return req.error(404, 'Depósito/armazém não encontrado.');
+            await UPDATE(Warehouses).set({ active: !warehouse.active }).where({ ID });
+            return SELECT.one.from(Warehouses).where({ ID });
+        });
+
+        this.on('createWarehouse', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para criar depósitos/armazéns.');
+            }
+
+            const { code, name, capacity, distributionCenterId, active } = req.data;
+            const distributionCenter = await SELECT.one.from(DistributionCenters).where({ ID: distributionCenterId });
+            if (!distributionCenter) return req.error(404, 'Centro de distribuição não encontrado.');
+            if (!distributionCenter.active) return req.error(422, 'Centro de distribuição inativo não pode receber novos depósitos/armazéns.');
+
+            const warehouseId = cds.utils.uuid();
+            await INSERT.into(Warehouses).entries({
+                ID: warehouseId,
+                code,
+                name,
+                capacity,
+                distributionCenter_ID: distributionCenterId,
+                active: active === undefined || active === null ? true : active
+            });
+
+            return SELECT.one.from(Warehouses).where({ ID: warehouseId });
+        });
+
+        this.on('DELETE', 'DistributionCenters', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para excluir centros de distribuição.');
+            }
+
+            const { ID } = req.params[0];
+            const distributionCenter = await SELECT.one.from(DistributionCenters).where({ ID });
+            if (!distributionCenter) return req.error(404, 'Centro de distribuição não encontrado.');
+
+            const warehouseExists = await SELECT.one.from(Warehouses).where({ distributionCenter_ID: ID });
+            if (warehouseExists) {
+                return req.error(409, 'Este centro de distribuição possui depósitos/armazéns vinculados e não pode ser excluído.');
+            }
+
+            await DELETE.from(DistributionCenters).where({ ID });
+            return req.reply();
+        });
+
+        this.on('toggleActive', 'DistributionCenters', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para ativar/desativar centros de distribuição.');
+            }
+            const { ID } = req.params[0];
+            const distributionCenter = await SELECT.one.from(DistributionCenters).where({ ID });
+            if (!distributionCenter) return req.error(404, 'Centro de distribuição não encontrado.');
+            await UPDATE(DistributionCenters).set({ active: !distributionCenter.active }).where({ ID });
+            return SELECT.one.from(DistributionCenters).where({ ID });
+        });
+
+        this.on('DELETE', 'Addresses', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para excluir endereços.');
+            }
+
+            const { ID } = req.params[0];
+            const address = await SELECT.one.from(Addresses).where({ ID });
+            if (!address) return req.error(404, 'Endereço não encontrado.');
+
+            const distributionCenterExists = await SELECT.one.from(DistributionCenters).where({ address_ID: ID });
+            if (distributionCenterExists) {
+                return req.error(409, 'Este endereço está vinculado a um centro de distribuição e não pode ser excluído.');
+            }
+
+            await DELETE.from(Addresses).where({ ID });
+            return req.reply();
+        });
+
+        this.on('createDistributionCenterWithAddress', async (req) => {
+            if (!canManageMasterData(req)) {
+                return req.error(403, 'Você não tem permissão para criar centros de distribuição.');
+            }
+
+            const {
+                code,
+                name,
+                street,
+                number,
+                district,
+                town,
+                state,
+                country_code,
+                zipCode,
+                observation,
+                active
+            } = req.data;
+            const addressId = cds.utils.uuid();
+            const distributionCenterId = cds.utils.uuid();
+            const isActive = active === undefined || active === null ? true : active;
+
+            await INSERT.into(Addresses).entries({
+                ID: addressId,
+                street,
+                number,
+                district,
+                town,
+                state,
+                country_code,
+                zipCode,
+                observation,
+                active: isActive
+            });
+
+            await INSERT.into(DistributionCenters).entries({
+                ID: distributionCenterId,
+                code,
+                name,
+                address_ID: addressId,
+                active: isActive
+            });
+
+            return SELECT.one.from(DistributionCenters).where({ ID: distributionCenterId });
+        });
+
         // ── Value help de unidades de medida ───────────────────────────────
 
         const UNIT_MEASURES = [
@@ -119,6 +278,11 @@ module.exports = class MainService extends cds.ApplicationService {
                 username:           user.username,
                 fullName:           `${user.firstName} ${user.lastName}`,
                 canManageMaterials: canManageMaterials(req),
+                canManageWarehouses: canManageMasterData(req),
+                canManageDistributionCenters: canManageMasterData(req),
+                canManageAddresses: canManageMasterData(req),
+                canViewStocks:       canManageMasterData(req),
+                hasManagementOptions: canManageMaterials(req) || canManageMasterData(req) || req.user?.is('ADMIN'),
                 canManageMoviments: canManageMoviments(req),
                 canApproveMoviments: canApproveMoviments(req),
                 canConcludeMoviments: canConcludeMoviments(req),
