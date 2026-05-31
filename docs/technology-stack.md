@@ -56,14 +56,14 @@ LogEstoque/ (workspace raiz)
 
 - **Fiori Elements** para telas de negócio (movimentações): controladas inteiramente por anotações CDS em `app/logestoque/annotations.cds`
 - **Freestyle** (XML View + Controller TypeScript) apenas para:
-  - Tela de Login (`webapp/view/Login.view.xml`)
-  - Dashboard de Posição de Estoque (`webapp/view/EstoqueDashboard.view.xml`)
+  - Tela de Login (`webapp/login/Login.view.xml`)
+  - Tela de Gestão de Usuários (`webapp/admin/UsersManagement.view.xml`)
 
 ### 2.2 Gerenciamento de estado
 
 - **Modelo OData v4** (`sap.ui.model.odata.v4.ODataModel`): estado principal gerenciado pelo framework
-- **JSONModel**: estado local das views freestyle (login form, filtros do dashboard)
-- Token JWT armazenado em `sessionStorage` (escopo de sessão do browser)
+- **JSONModel**: estado local das views freestyle (login form)
+- Token JWT armazenado em cookie `auth_token` (`httpOnly`, `sameSite: Lax`); não acessível via JS
 
 ---
 
@@ -180,7 +180,8 @@ LogEstoque/ (workspace raiz)
   "@cap-js/cds-test": "^0",
   "@cap-js/sqlite": "^2",
   "@sap/cds-dk": "^9",
-  "@types/jsonwebtoken": "^9"
+  "axios": "^1",
+  "cds-plugin-ui5": "^0"
 }
 ```
 

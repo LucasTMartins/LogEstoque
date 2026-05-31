@@ -63,7 +63,12 @@ CAP Node.js App
 │   ├── main.cds              ← MainService: projeções e ações para a UI Fiori
 │   ├── main.js               ← Handlers das ações de negócio
 │   ├── endpoints.cds         ← EndpointsService: CRUD administrativo
+│   ├── endpoints.js          ← Handler: hasheia senha em CREATE|UPDATE Users
+│   ├── admin.cds             ← AdminService: gestão de usuários (UI admin)
+│   ├── admin.js              ← Handler do AdminService
 │   ├── moviment-rules.js     ← Funções puras de validação de regras de negócio
+│   ├── user-rules.js         ← Funções puras de validação de usuários
+│   ├── server.js             ← Bootstrap: registra /auth/* e /health no Express
 │   └── auth/
 │       ├── auth-middleware.js ← Intercepta requisições, valida JWT, popula cds.context.user
 │       ├── login-handler.js   ← REST: POST /auth/login
@@ -120,8 +125,8 @@ Permissions         (1) ──── (N) UserPermissions   [Association from Use
 
 ### 5.3 Estratégia de Consistência
 
-- **ACID** via transações PostgreSQL (`db.transaction(async tx => { ... })`)
-- A conclusão de movimentação roda em transação atômica: atualiza `Stocks` + cria `StockHistory` + muda status
+- **ACID** via transações do CAP: em CAP v9, handlers `on()` de actions já rodam dentro de uma transação implícita
+- A conclusão de movimentação é atômica: CAP v9 garante que `_updateStock` + `UPDATE Moviments` rodam na mesma transação do handler
 - CAP usa queries parametrizadas automaticamente (proteção contra SQL injection)
 
 ---
@@ -134,14 +139,13 @@ Permissions         (1) ──── (N) UserPermissions   [Association from Use
 - **Autenticação:** `@requires: 'authenticated-user'`
 - **Entidades expostas (read-only):** `MovimentByWarehouse`, `MovimentDetail`, `Materials`, `Warehouses`, `DistributionCenters`
 - **Ações (bound):** `approve`, `rejectMoviment(reason)`, `conclude`
-- **Funções:** `posicaoEstoque(materialID)`
 
 ### 6.2 `EndpointsService` — `/odata/v4/endpoints`
 
 - **Audiência:** Administração (ferramentas, scripts, UI admin futura)
 - **Autenticação:** `@requires: 'ADMIN'`
-- **Entidades expostas:** Users (deve excluir `passwordHash`), Permissions, Materials, DistributionCenters, Warehouses, Addresses, Stocks, Moviments, StockHistory
-- **Ações:** `redefinirSenha(userID, novaSenha)`
+- **Entidades expostas:** Users (exclui `passwordHash`), Permissions, Materials, DistributionCenters, Warehouses, Addresses, Stocks, Moviments, StockHistory
+- **Handler:** `srv/endpoints.js` — remove `passwordHash` das respostas via `after READ|CREATE|UPDATE Users` (campo incluído na projeção para escrita, mas nunca exposto em leituras)
 - **Restrições:** `StockHistory` imutável (bloqueia CREATE/UPDATE/DELETE); `Moviments` em status C/R bloqueiam UPDATE/DELETE
 
 ### 6.3 Endpoints REST — `/auth/*`
@@ -150,7 +154,7 @@ Permissions         (1) ──── (N) UserPermissions   [Association from Use
 |---|---|---|---|
 | POST | `/auth/login` | Pública | Gera JWT |
 | GET | `/auth/me` | Bearer | Retorna payload do token |
-| POST | `/auth/logout` | — | Stateless; retorna 200 |
+| POST | `/auth/logout` | — | Limpa cookie `auth_token`; retorna 204 |
 | GET | `/health` | Pública | Health check (DB + app) |
 
 ---

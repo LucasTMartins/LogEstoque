@@ -68,47 +68,32 @@ test/
 
 | Arquivo | Módulo testado | Casos |
 |---|---|---|
-| `test/unit/auth-utils.test.js` | `srv/auth-handler.js` (JWT + bcrypt) | Token válido, expirado, secret errado; hash e compare de senha |
+| `test/unit/auth-utils.test.js` | `srv/auth/jwt.js` (JWT sign/verify) | Token válido, inválido, expirado, assinatura adulterada |
 | `test/unit/moviment-rules.test.js` | `srv/moviment-rules.js` | Todas as combinações de tipo × campos obrigatórios; quantidade mínima |
 
 ### 3.2 Exemplo: `test/unit/auth-utils.test.js`
 
 ```javascript
-const { test, describe } = require('node:test')
-const assert = require('node:assert/strict')
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
+// Definir JWT_SECRET antes de importar (jwt.js lança erro se ausente)
+process.env.JWT_SECRET = 'test-secret-para-auth-utils-tests-32chars!!'
 
-const JWT_SECRET = 'test-secret-12345678901234567890'
+const { test } = require('node:test')
+const assert   = require('node:assert/strict')
+const jwt      = require('../../srv/auth/jwt')
 
-describe('JWT Utils', () => {
-    test('deve gerar e verificar token válido', () => {
-        const payload = { sub: 'user-123', username: 'joao', permissions: ['ESTOQUE'] }
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' })
-        const decoded = jwt.verify(token, JWT_SECRET)
-        assert.equal(decoded.sub, payload.sub)
-        assert.deepEqual(decoded.permissions, payload.permissions)
-    })
-
-    test('deve rejeitar token expirado', () => {
-        const token = jwt.sign({ sub: 'user-123' }, JWT_SECRET, { expiresIn: '0s' })
-        assert.throws(() => jwt.verify(token, JWT_SECRET), { name: 'TokenExpiredError' })
-    })
-
-    test('deve rejeitar token com secret errado', () => {
-        const token = jwt.sign({ sub: 'user-123' }, 'wrong-secret')
-        assert.throws(() => jwt.verify(token, JWT_SECRET), { name: 'JsonWebTokenError' })
-    })
+test('signToken retorna string JWT válida', () => {
+    const token = jwt.signToken({ username: 'test', roles: ['ESTOQUE'] })
+    assert.ok(token.split('.').length === 3)
 })
 
-describe('Bcrypt Utils', () => {
-    test('deve fazer hash e verificar senha corretamente', async () => {
-        const senha = 'MinhaS3nha!'
-        const hash = await bcrypt.hash(senha, 10)
-        assert.ok(hash.startsWith('$2b$'))
-        assert.ok(await bcrypt.compare(senha, hash))
-        assert.ok(!(await bcrypt.compare('SenhaErrada', hash)))
-    })
+test('verifyToken decodifica payload corretamente', () => {
+    const token   = jwt.signToken({ username: 'joao.silva', roles: ['ESTOQUE'] })
+    const decoded = jwt.verifyToken(token)
+    assert.equal(decoded.username, 'joao.silva')
+})
+
+test('verifyToken lança erro para token inválido', () => {
+    assert.throws(() => jwt.verifyToken('token.invalido.aqui'))
 })
 ```
 
@@ -130,11 +115,6 @@ describe('Regras de Movimentação', () => {
         const r = validateMoviment({ type: 'S', quantity: 5, originWarehouseID: null })
         assert.ok(r.error)
         assert.match(r.error, /origem/)
-    })
-
-    test('Transferência deve ter origem e destino', () => {
-        const r = validateMoviment({ type: 'T', quantity: 10, originWarehouseID: 'wh-001', destinationWarehouseID: null })
-        assert.ok(r.error)
     })
 
     test('Quantidade deve ser maior que zero', () => {
@@ -167,7 +147,7 @@ describe('Regras de Movimentação', () => {
     "[testing]": {
       "requires": {
         "db": { "kind": "sqlite", "credentials": { "url": ":memory:" } },
-        "auth": { "kind": "custom", "impl": "./srv/jwt-middleware.js" }
+        "auth": { "kind": "custom", "impl": "./srv/auth/auth-middleware" }
       }
     }
   }
@@ -179,9 +159,9 @@ describe('Regras de Movimentação', () => {
 | Teste | Validação |
 |---|---|
 | GET `MovimentByWarehouse` com token válido | Status 200; `value` é array |
-| `criarMovimentacao` com dados válidos | Status 200; movimentação criada com status `P` |
-| `criarMovimentacao` sem `destinationWarehouse` para tipo E | Status 400 |
-| `aprovarMovimentacao` → `concluirMovimentacao` | Estoque atualizado; status `C` |
+| POST em `Moviments` com dados válidos | Status 201; movimentação criada com status `P` |
+| POST em `Moviments` sem `destinationWarehouse` para tipo E | Status 4xx |
+| `approve` (APROVACAO) → `conclude` (ESTOQUE) | Estoque atualizado; status `C` |
 | Editar movimentação com status `C` | Status 409 |
 | GET sem token | Status 401 |
 | Acesso ao `EndpointsService` com role `ESTOQUE` | Status 403 |
@@ -207,10 +187,9 @@ Executar com a extensão **REST Client** do VS Code antes de cada deploy para pr
 ```
 1. POST /auth/login          → token JWT
 2. GET  /odata/v4/main/MovimentByWarehouse  → lista
-3. POST /odata/v4/main/criarMovimentacao    → movimentação P
-4. POST /odata/v4/main/aprovarMovimentacao  → status A
-5. POST /odata/v4/main/concluirMovimentacao → status C; estoque atualizado
-6. GET  /odata/v4/main/posicaoEstoque(...)  → quantidade correta
+3. POST /odata/v4/main/Moviments                              → movimentação P
+4. POST /odata/v4/main/Moviments(ID)/MainService.approve      → status A
+5. POST /odata/v4/main/Moviments(ID)/MainService.conclude     → status C; estoque atualizado
 7. POST /auth/login (senha errada)          → 401
 8. GET  /odata/v4/endpoints/Users (sem ADMIN) → 403
 ```
@@ -260,8 +239,8 @@ node --test --experimental-test-coverage test/**/*.test.js
 Os CSVs em `test/data/` são carregados automaticamente pelo CAP em desenvolvimento e testes.
 
 **Atenção sobre senhas:**
-- Em desenvolvimento, as senhas nos CSVs podem ser texto puro (simplificação)
-- O handler de login pode verificar se a senha começa com `$2b$` (bcrypt) — se não, trata como plaintext em dev
+- Os CSVs em `test/data/` usam hashes bcrypt (custo 10) — **não** texto puro
+- A senha padrão de todos os usuários de teste é `pass-01`
 - Em produção (seed.sql), **sempre** usar hashes bcrypt
 
 **IDs nos CSVs:**

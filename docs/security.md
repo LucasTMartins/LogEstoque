@@ -67,7 +67,7 @@ O arquivo `srv/auth/auth-middleware.js` intercepta **todas** as requisições:
 | `ESTOQUE` | `db.auth.Permissions` | `MainService`: criar e concluir movimentações |
 | `APROVACAO` | `db.auth.Permissions` | `MainService`: aprovar/rejeitar movimentações |
 | `VIEWER` | `db.auth.Permissions` | `MainService`: somente leitura (GET) |
-| `LOGISTICA` | `db.auth.Permissions` | `MainService`: consultas e relatórios |
+| `LOGISTICA` | `db.auth.Permissions` | `MainService`: criação de movimentações logísticas |
 | `authenticated-user` | Builtin CAP | Qualquer usuário com token JWT válido |
 
 ### 2.2 Mapeamento de Anotações CDS
@@ -78,14 +78,12 @@ service EndpointsService { ... }
 
 @requires: 'authenticated-user'
 service MainService {
-    @requires: 'ESTOQUE'
-    action criarMovimentacao(...);
+    // Criação via POST padrão em /Moviments (roles: ESTOQUE, LOGISTICA, ADMIN)
 
-    @requires: 'APROVACAO'
-    action aprovarMovimentacao(...);
-
-    @requires: 'ESTOQUE'
-    action concluirMovimentacao(...);
+    // Actions bound à entidade Moviments:
+    action approve()                                    // roles: APROVACAO, ADMIN
+    action rejectMoviment(reason : String(500))         // roles: APROVACAO, ADMIN
+    action conclude()                                   // roles: ESTOQUE, ADMIN
 }
 ```
 
