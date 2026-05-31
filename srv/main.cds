@@ -4,15 +4,21 @@ using {
     db.auth
 } from '../db/index.cds';
 
+type PosicaoEstoqueItem {
+    warehouseID   : UUID;
+    warehouseCode : String(10);
+    warehouseName : String(100);
+    quantity      : Integer;
+};
+
 service MainService @(requires: 'authenticated-user') {
 
     // Entidade principal — CRUD completo + ações de workflow
     @(restrict: [
         { grant: ['READ', 'UPDATE'],                                to: 'authenticated-user'               },
         { grant: ['CREATE'],                                        to: ['ESTOQUE', 'LOGISTICA', 'ADMIN']  },
-        { grant: ['DELETE'],                                        to: ['ESTOQUE', 'ADMIN']               },
-        { grant: ['approve', 'rejectMoviment'],                     to: ['APROVACAO', 'ADMIN']             },
-        { grant: ['conclude'],                                      to: ['ESTOQUE', 'ADMIN']               },
+        { grant: ['DELETE'],                                        to: 'authenticated-user'               },
+        { grant: ['approve', 'rejectMoviment', 'conclude'],         to: 'authenticated-user'               },
     ])
     @cds.redirection.target: true
     entity Moviments  as projection on inventory.Moviments {
@@ -29,6 +35,8 @@ service MainService @(requires: 'authenticated-user') {
             when 'S' then 'Saída'
             else type
         end as typeLabel : String,
+        virtual canNotApproveReject : Boolean,
+        virtual canNotConclude      : Boolean,
         originHistory     : Composition of many OriginStockHistory      on originHistory.moviment_ID      = ID,
         destinationHistory: Composition of many DestinationStockHistory on destinationHistory.moviment_ID = ID
     } actions {
@@ -83,6 +91,9 @@ service MainService @(requires: 'authenticated-user') {
             fullName            : String(121);
             canManageMaterials  : Boolean;
             canManageMoviments  : Boolean;
+            canApproveMoviments : Boolean;
+            canConcludeMoviments: Boolean;
+            canDeleteMoviments  : Boolean;
             isAdmin             : Boolean;
     };
 
@@ -95,6 +106,8 @@ service MainService @(requires: 'authenticated-user') {
         @mandatory currentPassword : String,
         @mandatory newPassword     : String
     ) returns Boolean;
+
+    function posicaoEstoque(materialID: UUID) returns array of PosicaoEstoqueItem;
 
     @readonly entity Warehouses as projection on masterdata.Warehouses {
         key ID,

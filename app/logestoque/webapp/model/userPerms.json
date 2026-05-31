@@ -1,1 +1,8 @@
-{ "canManageMaterials": false, "canManageMoviments": false, "isAdmin": false }
+{
+  "canManageMaterials": false,
+  "canManageMoviments": false,
+  "canApproveMoviments": false,
+  "canConcludeMoviments": false,
+  "canDeleteMoviments": false,
+  "isAdmin": false
+}

@@ -19,6 +19,9 @@ export default class Component extends AppComponent {
 			fullName: "",
 			canManageMaterials: false,
 			canManageMoviments: false,
+			canApproveMoviments: false,
+			canConcludeMoviments: false,
+			canDeleteMoviments: false,
 			isAdmin: false,
 			loaded: false
 		}), "currentUser");
@@ -45,6 +48,9 @@ export default class Component extends AppComponent {
 				(this.getModel("userPerms") as JSONModel | undefined)?.setData({
 					canManageMaterials: !!user.canManageMaterials,
 					canManageMoviments: !!user.canManageMoviments,
+					canApproveMoviments: !!user.canApproveMoviments,
+					canConcludeMoviments: !!user.canConcludeMoviments,
+					canDeleteMoviments: !!user.canDeleteMoviments,
 					isAdmin: !!user.isAdmin
 				});
 			})
@@ -57,6 +63,9 @@ export default class Component extends AppComponent {
 		const mDefaults = {
 			canManageMaterials: false,
 			canManageMoviments: false,
+			canApproveMoviments: false,
+			canConcludeMoviments: false,
+			canDeleteMoviments: false,
 			isAdmin: false
 		};
 
@@ -67,10 +76,17 @@ export default class Component extends AppComponent {
 			const raw = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
 			const padded = raw + "=".repeat((4 - raw.length % 4) % 4);
 			const payload = JSON.parse(atob(padded)) as Record<string, unknown>;
+			const roles = Array.isArray(payload.roles) ? payload.roles as string[] : [];
+			const hasRole = function (role: string): boolean {
+				return roles.indexOf(role) !== -1;
+			};
 
 			return {
-				canManageMaterials: !!payload.canManageMaterials,
-				canManageMoviments: !!payload.canManageMoviments,
+				canManageMaterials: !!payload.canManageMaterials || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				canManageMoviments: !!payload.canManageMoviments || hasRole("ESTOQUE") || hasRole("LOGISTICA") || hasRole("ADMIN"),
+				canApproveMoviments: !!payload.canApproveMoviments || hasRole("APROVACAO") || hasRole("ADMIN"),
+				canConcludeMoviments: !!payload.canConcludeMoviments || hasRole("ESTOQUE") || hasRole("ADMIN"),
+				canDeleteMoviments: !!payload.canDeleteMoviments || hasRole("ESTOQUE") || hasRole("ADMIN"),
 				isAdmin: !!payload.isAdmin
 			};
 		} catch (_e) {

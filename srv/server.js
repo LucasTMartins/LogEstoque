@@ -33,8 +33,13 @@ cds.on('bootstrap', (app) => {
             },
         });
     });
-    app.get('/health', (_req, res) => {
-        res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    app.get('/health', async (_req, res) => {
+        try {
+            await cds.db.run('SELECT 1');
+            res.json({ status: 'ok', timestamp: new Date().toISOString() });
+        } catch {
+            res.status(503).json({ status: 'error', timestamp: new Date().toISOString() });
+        }
     });
     app.get('/login', (_req, res) => res.sendFile(LOGIN_PAGE));
 });

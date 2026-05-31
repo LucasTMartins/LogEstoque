@@ -19,4 +19,5 @@ service EndpointsService @(requires: 'ADMIN') {
     entity Warehouses          as projection on masterdata.Warehouses;
     entity DistributionCenters as projection on masterdata.DistributionCenters;
     entity Addresses           as projection on masterdata.Addresses;
+    action redefinirSenha(userID: UUID, novaSenha: String) returns Boolean;
 }

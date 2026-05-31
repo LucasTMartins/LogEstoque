@@ -76,16 +76,19 @@ annotate service.Moviments with @(
             $Type : 'UI.DataFieldForAction',
             Action: 'MainService.approve',
             Label : 'Aprovar',
+            ![@UI.Hidden]: canNotApproveReject,
         },
         {
             $Type : 'UI.DataFieldForAction',
             Action: 'MainService.rejectMoviment',
-            Label : 'Rejeitar',
+            Label : 'Reprovar',
+            ![@UI.Hidden]: canNotApproveReject,
         },
         {
             $Type : 'UI.DataFieldForAction',
             Action: 'MainService.conclude',
             Label : 'Concluir',
+            ![@UI.Hidden]: canNotConclude,
         },
     ],
     UI.FieldGroup #Details: {

@@ -12,7 +12,7 @@ async function loginHandler(req, res) {
 
   // Busca o usuário com suas permissões
   const db = await cds.connect.to('db');
-  const { Users } = db.entities('db.auth');
+  const { Users } = cds.entities('db.auth');
 
   const user = await db.run(
     SELECT.one.from(Users)
@@ -30,7 +30,7 @@ async function loginHandler(req, res) {
   }
 
   // Busca permissões do usuário
-  const { UserPermissions } = db.entities('db.auth');
+  const { UserPermissions } = cds.entities('db.auth');
   const userPerms = await db.run(
     SELECT.from(UserPermissions)
       .columns('permission.name')
@@ -48,6 +48,9 @@ async function loginHandler(req, res) {
     isAdmin:             roles.includes('ADMIN'),
     canManageMaterials:  roles.includes('ESTOQUE') || roles.includes('ADMIN'),
     canManageMoviments:  roles.includes('ESTOQUE') || roles.includes('LOGISTICA') || roles.includes('ADMIN'),
+    canApproveMoviments: roles.includes('APROVACAO') || roles.includes('ADMIN'),
+    canConcludeMoviments: roles.includes('ESTOQUE') || roles.includes('ADMIN'),
+    canDeleteMoviments: roles.includes('ESTOQUE') || roles.includes('ADMIN'),
   });
 
   res.cookie('auth_token', token, {

@@ -10,6 +10,14 @@ module.exports = class EndpointsService extends cds.ApplicationService {
             for (const user of items) delete user.passwordHash;
         });
 
+        this.on('redefinirSenha', async (req) => {
+            const { userID, novaSenha } = req.data;
+            const { Users } = cds.entities('db.auth');
+            const hash = await bcryptjs.hash(novaSenha, 10);
+            await UPDATE(Users).set({ passwordHash: hash }).where({ ID: userID });
+            return true;
+        });
+
         return super.init();
     }
 };

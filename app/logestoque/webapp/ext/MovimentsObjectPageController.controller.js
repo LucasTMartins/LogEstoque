@@ -1,7 +1,8 @@
 sap.ui.define([
     "sap/ui/core/mvc/ControllerExtension",
-    "sap/m/Button"
-], function (ControllerExtension, Button) {
+    "sap/m/Button",
+    "br/dev/imlucas/logestoque/ext/MovimentPermissionActions"
+], function (ControllerExtension, Button, MovimentPermissionActions) {
     "use strict";
 
     return ControllerExtension.extend(
@@ -10,10 +11,12 @@ sap.ui.define([
             override: {
                 onAfterRendering: function () {
                     this._addNavBackButton();
+                    MovimentPermissionActions.apply(this);
                 },
                 routing: {
                     onAfterBinding: function () {
                         this._addNavBackButton();
+                        MovimentPermissionActions.apply(this);
                     }
                 }
             },

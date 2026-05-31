@@ -23,6 +23,18 @@ module.exports = class MainService extends cds.ApplicationService {
             return req.user?.is('ESTOQUE') || req.user?.is('LOGISTICA') || req.user?.is('ADMIN');
         };
 
+        const canApproveMoviments = (req) => {
+            return req.user?.is('APROVACAO') || req.user?.is('ADMIN');
+        };
+
+        const canConcludeMoviments = (req) => {
+            return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
+        };
+
+        const canDeleteMoviments = (req) => {
+            return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
+        };
+
         this.before('CREATE', 'Materials', (req) => {
             if (req.data.active === undefined || req.data.active === null)
                 req.data.active = true;
@@ -108,6 +120,9 @@ module.exports = class MainService extends cds.ApplicationService {
                 fullName:           `${user.firstName} ${user.lastName}`,
                 canManageMaterials: canManageMaterials(req),
                 canManageMoviments: canManageMoviments(req),
+                canApproveMoviments: canApproveMoviments(req),
+                canConcludeMoviments: canConcludeMoviments(req),
+                canDeleteMoviments: canDeleteMoviments(req),
                 isAdmin:            req.user?.is('ADMIN')
             }];
         });
@@ -151,10 +166,28 @@ module.exports = class MainService extends cds.ApplicationService {
             return true;
         });
 
+        this.on('posicaoEstoque', async (req) => {
+            const { materialID } = req.data;
+            const stocks = await SELECT.from(Stocks).where({ material_ID: materialID });
+            if (!stocks.length) return [];
+            const warehouseIDs = [...new Set(stocks.map(s => s.warehouse_ID))];
+            const warehouses = await SELECT.from(Warehouses).where({ ID: { in: warehouseIDs } });
+            const whMap = Object.fromEntries(warehouses.map(w => [w.ID, w]));
+            return stocks.map(s => {
+                const w = whMap[s.warehouse_ID] ?? {};
+                return {
+                    warehouseID:   s.warehouse_ID,
+                    warehouseCode: w.code  ?? '',
+                    warehouseName: w.name  ?? '',
+                    quantity:      s.quantity ?? 0,
+                };
+            });
+        });
+
         // ── Criação e deleção de movimentação ─────────────────────────────
 
         this.on('DELETE', 'Moviments', async (req) => {
-            if (!req.user?.is('ESTOQUE') && !req.user?.is('ADMIN')) {
+            if (!canDeleteMoviments(req)) {
                 return req.error(403, 'Você não tem permissão para excluir movimentações.');
             }
             const { ID } = req.params[0];
@@ -205,6 +238,10 @@ module.exports = class MainService extends cds.ApplicationService {
         // ── Ação: Aprovar ───────────────────────────────────────────────────
 
         this.on('approve', 'Moviments', async (req) => {
+            if (!canApproveMoviments(req)) {
+                return req.error(403, 'Você não tem permissão para aprovar movimentações. Esta ação requer a permissão APROVACAO.');
+            }
+
             const { ID } = req.params[0];
 
             const moviment = await SELECT.one.from(Moviments).where({ ID });
@@ -256,6 +293,10 @@ module.exports = class MainService extends cds.ApplicationService {
         // ── Ação: Concluir (atualiza estoque) ──────────────────────────────
 
         this.on('conclude', 'Moviments', async (req) => {
+            if (!canConcludeMoviments(req)) {
+                return req.error(403, 'Você não tem permissão para concluir movimentações. Esta ação requer a permissão ESTOQUE.');
+            }
+
             const { ID } = req.params[0];
 
             const moviment = await SELECT.one.from(Moviments).where({ ID });
@@ -292,6 +333,10 @@ module.exports = class MainService extends cds.ApplicationService {
         // ── Ação: Rejeitar ──────────────────────────────────────────────────
 
         this.on('rejectMoviment', 'Moviments', async (req) => {
+            if (!canApproveMoviments(req)) {
+                return req.error(403, 'Você não tem permissão para rejeitar movimentações. Esta ação requer a permissão APROVACAO.');
+            }
+
             const { ID }     = req.params[0];
             const { reason } = req.data;
 
@@ -338,9 +383,13 @@ module.exports = class MainService extends cds.ApplicationService {
             if (w) req.query.SELECT.where = _expandDateFilters(w);
         });
 
-        this.after('READ', 'Moviments', (results) => {
+        this.after('READ', 'Moviments', (results, req) => {
+            const bCanApprove  = canApproveMoviments(req);
+            const bCanConclude = canConcludeMoviments(req);
             const rows = Array.isArray(results) ? results : [results];
             rows.forEach(row => {
+                row.canNotApproveReject = !bCanApprove;
+                row.canNotConclude      = !bCanConclude;
                 if (row.createdAt)  row.createdAt  = row.createdAt.slice(0, 10);
                 if (row.modifiedAt) row.modifiedAt = row.modifiedAt.slice(0, 10);
             });
