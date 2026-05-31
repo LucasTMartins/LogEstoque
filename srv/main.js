@@ -285,7 +285,6 @@ module.exports = class MainService extends cds.ApplicationService {
                     ID
                 );
             }
-
             await UPDATE(Moviments).set({ status: rules.STATUS.C }).where({ ID });
             return SELECT.one.from(Moviments).where({ ID });
         });

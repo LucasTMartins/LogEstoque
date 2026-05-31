@@ -5,7 +5,12 @@ using {
 } from '../db/index.cds';
 
 service EndpointsService @(requires: 'ADMIN') {
-    entity Users               as projection on auth.Users;
+    entity Users               as projection on auth.Users {
+        ID, username, firstName, lastName, active,
+        createdAt, createdBy, modifiedAt, modifiedBy,
+        passwordHash,  // removido das respostas GET pelo after READ handler em endpoints.js
+        permissions
+    };
     entity Permissions         as projection on auth.Permissions;
     entity Moviments           as projection on inventory.Moviments;
     entity StockHistory        as projection on inventory.StockHistory;

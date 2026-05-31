@@ -11,7 +11,8 @@ service MainService @(requires: 'authenticated-user') {
         { grant: ['READ', 'UPDATE'],                                to: 'authenticated-user'               },
         { grant: ['CREATE'],                                        to: ['ESTOQUE', 'LOGISTICA', 'ADMIN']  },
         { grant: ['DELETE'],                                        to: ['ESTOQUE', 'ADMIN']               },
-        { grant: ['approve', 'rejectMoviment', 'conclude'],         to: 'authenticated-user'               },
+        { grant: ['approve', 'rejectMoviment'],                     to: ['APROVACAO', 'ADMIN']             },
+        { grant: ['conclude'],                                      to: ['ESTOQUE', 'ADMIN']               },
     ])
     @cds.redirection.target: true
     entity Moviments  as projection on inventory.Moviments {
