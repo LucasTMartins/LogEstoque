@@ -35,7 +35,7 @@ O **LogEstoque** gerencia o ciclo de vida de materiais entre armazéns de centro
 | **Armazéns** | CRUD vinculado a CDs; capacidade máxima |
 | **Endereços** | Entidade reutilizável: logradouro, bairro, cidade, estado, país (ISO), CEP |
 | **Controle de Estoque** | Posição atual (quantidade) de cada material por armazém |
-| **Movimentações** | Registro de entradas, saídas e transferências com fluxo de aprovação |
+| **Movimentações** | Registro de entradas e saídas com fluxo de aprovação |
 | **Histórico de Estoque** | Registro imutável de cada alteração de quantidade |
 | **Gestão de Usuários** | CRUD de usuários com controle de permissões por papel |
 | **Autenticação** | Login local via JWT gerado pela própria aplicação CAP |
@@ -51,11 +51,10 @@ O **LogEstoque** gerencia o ciclo de vida de materiais entre armazéns de centro
 #### UC-02: Criar Movimentação
 - **Ator:** ESTOQUE, ADMIN
 - **Pré-condição:** Autenticado; material e armazéns ativos existentes
-- **Fluxo:** Seleciona tipo (E/S/T), material, quantidade, armazéns → action `criarMovimentacao` → status `Pendente`
+- **Fluxo:** Seleciona tipo (E/S), material, quantidade, armazéns → action `criarMovimentacao` → status `Pendente`
 - **Regras:**
   - Entrada (E): `destinationWarehouse` obrigatório
   - Saída (S): `originWarehouse` obrigatório; estoque >= quantidade
-  - Transferência (T): ambos obrigatórios; origem ≠ destino
   - Quantidade mínima: 1
 
 #### UC-03: Aprovar Movimentação
@@ -126,11 +125,10 @@ O **LogEstoque** gerencia o ciclo de vida de materiais entre armazéns de centro
 | **RN-01** | Movimentações com status `Concluído` ou `Rejeitado` são imutáveis |
 | **RN-02** | `StockHistory` é imutável — nenhuma escrita direta permitida via API |
 | **RN-03** | Quantidade em `Stocks` nunca pode ser negativa |
-| **RN-04** | Uma Saída ou Transferência exige estoque disponível >= quantidade solicitada |
-| **RN-05** | Na Transferência, armazém de origem e destino devem ser distintos |
-| **RN-06** | Códigos de Material, CD e Armazém são únicos no sistema |
-| **RN-07** | Usuário inativo (`active = false`) não pode autenticar |
-| **RN-08** | A senha de usuário nunca é exposta via OData (projeção com `excluding { password }`) |
+| **RN-04** | Uma Saída exige estoque disponível >= quantidade solicitada |
+| **RN-05** | Códigos de Material, CD e Armazém são únicos no sistema |
+| **RN-06** | Usuário inativo (`active = false`) não pode autenticar |
+| **RN-07** | A senha de usuário nunca é exposta via OData (projeção com `excluding { password }`) |
 
 ---
 
