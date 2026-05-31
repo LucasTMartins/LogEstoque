@@ -39,6 +39,16 @@ module.exports = class MainService extends cds.ApplicationService {
             return req.user?.is('ESTOQUE') || req.user?.is('ADMIN');
         };
 
+        const capitalizeWords = (value) => {
+            return String(value || '')
+                .trim()
+                .toLocaleLowerCase('pt-BR')
+                .split(/\s+/)
+                .filter(Boolean)
+                .map((word) => word.charAt(0).toLocaleUpperCase('pt-BR') + word.slice(1))
+                .join(' ');
+        };
+
         this.before('CREATE', 'Materials', (req) => {
             if (req.data.active === undefined || req.data.active === null)
                 req.data.active = true;
@@ -201,6 +211,8 @@ module.exports = class MainService extends cds.ApplicationService {
                 observation,
                 active
             } = req.data;
+            const normalizedTown = capitalizeWords(town);
+            const normalizedState = String(state || '').trim().toLocaleUpperCase('pt-BR');
             const addressId = cds.utils.uuid();
             const distributionCenterId = cds.utils.uuid();
             const isActive = active === undefined || active === null ? true : active;
@@ -210,8 +222,8 @@ module.exports = class MainService extends cds.ApplicationService {
                 street,
                 number,
                 district,
-                town,
-                state,
+                town: normalizedTown,
+                state: normalizedState,
                 country_code,
                 zipCode,
                 observation,

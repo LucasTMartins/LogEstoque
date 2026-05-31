@@ -51,8 +51,8 @@ async function createDistributionCenter(code) {
         street: `Rua ${code}`,
         number: '100',
         district: 'Centro',
-        town: 'Sao Paulo',
-        state: 'SP',
+        town: 'sao paulo',
+        state: 'sp',
         country_code: '032',
         zipCode: '01310-100',
     });
@@ -94,6 +94,10 @@ test('ManagedUsers expõe report de usuários apenas para ADMIN', async () => {
 test('ESTOQUE cria centro de distribuição com endereço e depósito/armazém vinculado', async () => {
     const suffix = String(Date.now()).slice(-8);
     const dc = await createDistributionCenter(`T${suffix.slice(0, 9)}`);
+    const addressRes = await httpEstoque.get(`${BASE}/Addresses(${dc.address_ID})`);
+    assert.equal(addressRes.status, 200, JSON.stringify(addressRes.data));
+    assert.equal(addressRes.data.town, 'Sao Paulo');
+    assert.equal(addressRes.data.state, 'SP');
 
     const whRes = await httpEstoque.post(`${BASE}/createWarehouse`, {
         code: `W${suffix}`,
