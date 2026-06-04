@@ -1,17 +1,58 @@
 services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - logestoque-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   logestoque:
     build:
       context: .
       dockerfile: dockerfile
     container_name: logestoque-beta
-    restart: unless-stopped
     environment:
-      HOST: 0.0.0.0
-      PORT: 4004
+      HOST:           0.0.0.0
+      PORT:           4004
+      NODE_ENV:       production
+      JWT_SECRET:     ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      DB_HOST:        postgres
+      DB_PORT:        5432
+      DB_NAME:        ${DB_NAME}
+      DB_USER:        ${DB_USER}
+      DB_PASSWORD:    ${DB_PASSWORD}
+      # CDS env vars — substitui as credenciais literais "${DB_HOST}" do package.json
+      cds_requires_db_credentials_host:     postgres
+      cds_requires_db_credentials_port:     5432
+      cds_requires_db_credentials_database: ${DB_NAME}
+      cds_requires_db_credentials_user:     ${DB_USER}
+      cds_requires_db_credentials_password: ${DB_PASSWORD}
     ports:
       - "4005:4004"
-    volumes:
-      - logestoque-beta-data:/app/gen/srv/db
+    networks:
+      - logestoque-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  logestoque-net:
+    driver: bridge
 
 volumes:
-  logestoque-beta-data:
+  postgres-data:

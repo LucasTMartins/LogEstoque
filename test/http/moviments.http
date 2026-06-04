@@ -20,12 +20,12 @@ Content-Type: application/json
 
 ###
 
-### Step 0b — Login maria.aprovacao (APROVACAO)
+### Step 0b — Login m.aprovacao (APROVACAO)
 POST {{base_url}}/auth/login
 Content-Type: application/json
 
 {
-    "username": "maria.aprovacao",
+    "username": "m.aprovacao",
     "password": "pass-01"
 }
 
@@ -50,7 +50,7 @@ Authorization: Bearer {{token_joao}}
 # Substitua pelo ID retornado no Step 1
 @moviment_id = <COLE_AQUI_MOVIMENT_ID>
 
-### Step 2 — Aprovar movimentação (maria.aprovacao)
+### Step 2 — Aprovar movimentação (m.aprovacao)
 POST {{odata}}/Moviments({{moviment_id}})/MainService.approve
 Content-Type: application/json
 Authorization: Bearer {{token_maria}}
