@@ -116,7 +116,11 @@ async function seed() {
   }
 }
 
-seed().catch(err => {
-  console.error('\nErro no seed:', err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  seed().catch(err => {
+    console.error('\nErro no seed:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = seed;

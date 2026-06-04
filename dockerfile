@@ -35,6 +35,9 @@ COPY --from=builder /app/db ./db
 # Frontend pré-compilado: copia o dist/ como webapp/ para evitar TypeScript no runtime
 COPY --from=builder /app/app/logestoque/dist ./app/logestoque/webapp
 COPY --from=builder /app/app/logestoque/annotations.cds ./app/logestoque/annotations.cds
+# Fixtures CSV e script de seed usados pelo endpoint /admin/seed
+COPY --from=builder /app/scripts/seed-dev.js ./scripts/seed-dev.js
+COPY --from=builder /app/test/data ./test/data
 
 # Script de inicialização que aguarda o banco antes de subir
 COPY scripts/entrypoint.sh /entrypoint.sh
