@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    container_name: logestoque
+    container_name: logestoque-beta
     restart: unless-stopped
     environment:
       HOST: 0.0.0.0
@@ -11,7 +11,7 @@ services:
     ports:
       - "4005:4004"
     volumes:
-      - logestoque-data:/app/gen/srv/db
+      - logestoque-beta-data:/app/gen/srv/db
 
 volumes:
-  logestoque-data:
+  logestoque-beta-data:
