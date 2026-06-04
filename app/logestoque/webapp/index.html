@@ -13,13 +13,24 @@
     <script>
         (function () {
             var token = sessionStorage.getItem('token');
-            if (!token) {
+            function redirectToLogin() {
                 var returnUrl = encodeURIComponent(window.location.href);
                 window.location.replace('/login?return=' + returnUrl);
-                return;
             }
 
-            // Inject Bearer token into every XHR request
+            if (!token) {
+                fetch('/auth/me', {
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' }
+                }).then(function (response) {
+                    if (!response.ok) {
+                        redirectToLogin();
+                    }
+                }).catch(redirectToLogin);
+            }
+
+            // Inject Bearer token into every XHR request when available.
+            // Without a readable token, same-origin XHR still sends the HttpOnly auth cookie.
             var _open = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function (method, url) {
                 var self = this;
@@ -28,7 +39,7 @@
                 this.addEventListener('load', function () {
                     if (self.status === 401 && self._url && self._url.indexOf('/odata/v4/') !== -1) {
                         sessionStorage.removeItem('token');
-                        window.location.replace('/login');
+                        redirectToLogin();
                     }
                 });
                 return _open.apply(self, arguments);

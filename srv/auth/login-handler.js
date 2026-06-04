@@ -61,10 +61,15 @@ async function loginHandler(req, res) {
   res.cookie('auth_token', token, {
     httpOnly: true,
     sameSite: 'Lax',
+    secure:   _isHttpsRequest(req),
     path:     '/',
   });
 
   return res.status(200).json({ token, username: user.username, roles });
+}
+
+function _isHttpsRequest(req) {
+  return req.secure || String(req.headers['x-forwarded-proto'] || '').split(',')[0] === 'https';
 }
 
 module.exports = loginHandler;

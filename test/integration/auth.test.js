@@ -28,6 +28,32 @@ test('POST /auth/login com credenciais válidas retorna 200 e token', async () =
     assert.ok(Array.isArray(res.data.roles), 'roles deve ser array');
 });
 
+test('POST /auth/login emite cookie auth_token utilizável pelo /auth/me', async () => {
+    const loginRes = await http.post('/auth/login', { username: 'joao.silva', password: 'pass-01' });
+    const authCookie = loginRes.headers['set-cookie']?.find((cookie) => cookie.startsWith('auth_token='));
+
+    assert.ok(authCookie, 'deve retornar cookie auth_token');
+    assert.match(authCookie, /;\s*HttpOnly/i);
+    assert.match(authCookie, /;\s*SameSite=Lax/i);
+
+    const meRes = await http.get('/auth/me', {
+        headers: { Cookie: authCookie.split(';')[0] },
+    });
+
+    assert.equal(meRes.status, 200);
+    assert.equal(meRes.data.user.username, 'joao.silva');
+});
+
+test('POST /auth/login via HTTPS/proxy emite cookie Secure', async () => {
+    const res = await http.post('/auth/login', { username: 'joao.silva', password: 'pass-01' }, {
+        headers: { 'X-Forwarded-Proto': 'https' },
+    });
+    const authCookie = res.headers['set-cookie']?.find((cookie) => cookie.startsWith('auth_token='));
+
+    assert.ok(authCookie, 'deve retornar cookie auth_token');
+    assert.match(authCookie, /;\s*Secure/i);
+});
+
 test('POST /auth/login com senha errada retorna 401', async () => {
     const res = await http.post('/auth/login', { username: 'joao.silva', password: 'senha-errada' });
     assert.equal(res.status, 401);
@@ -65,6 +91,29 @@ test('GET /auth/me com token inválido retorna 401', async () => {
         headers: { Authorization: 'Bearer token.invalido.aqui' },
     });
     assert.equal(res.status, 401);
+});
+
+// ─── /admin/seed ──────────────────────────────────────────────────────────────
+
+test('GET /admin/seed usa validação por cookie e não exige token em sessionStorage', async () => {
+    const res = await http.get('/admin/seed');
+
+    assert.equal(res.status, 200);
+    assert.match(res.data, /fetch\('\/auth\/me'/);
+    assert.doesNotMatch(res.data, /sessionStorage\.getItem\('token'\)/);
+});
+
+test('POST /admin/seed com cookie de usuário não-admin autentica e retorna 403', async () => {
+    const loginRes = await http.post('/auth/login', { username: 'joao.silva', password: 'pass-01' });
+    const authCookie = loginRes.headers['set-cookie']?.find((cookie) => cookie.startsWith('auth_token='));
+
+    assert.ok(authCookie, 'deve retornar cookie auth_token');
+
+    const res = await http.post('/admin/seed', {}, {
+        headers: { Cookie: authCookie.split(';')[0] },
+    });
+
+    assert.equal(res.status, 403);
 });
 
 // ─── /auth/logout ─────────────────────────────────────────────────────────────

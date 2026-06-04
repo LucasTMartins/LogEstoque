@@ -14,6 +14,7 @@ sap.ui.define([
             fetch("/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "same-origin",
                 body: JSON.stringify({ username: sUsername, password: sPassword })
             })
             .then(async function (response) {
@@ -24,7 +25,9 @@ sap.ui.define([
                 return response.json();
             })
             .then(function (data) {
-                sessionStorage.setItem("token", data.token);
+                if (typeof data.token === "string") {
+                    sessionStorage.setItem("token", data.token);
+                }
                 window.location.href = "/";
             })
             .catch(function (err) {
