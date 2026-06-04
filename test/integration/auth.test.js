@@ -93,6 +93,31 @@ test('GET /auth/me com token inválido retorna 401', async () => {
     assert.equal(res.status, 401);
 });
 
+test('GET /auth/me usa cookie válido quando Authorization está inválido', async () => {
+    const loginRes = await http.post('/auth/login', { username: 'joao.silva', password: 'pass-01' });
+    const authCookie = loginRes.headers['set-cookie']?.find((cookie) => cookie.startsWith('auth_token='));
+
+    assert.ok(authCookie, 'deve retornar cookie auth_token');
+
+    const res = await http.get('/auth/me', {
+        headers: {
+            Authorization: 'Bearer token.antigo.invalido',
+            Cookie: authCookie.split(';')[0],
+        },
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.data.user.username, 'joao.silva');
+});
+
+test('GET /login valida sessão no backend e não confia apenas no sessionStorage', async () => {
+    const res = await http.get('/login');
+
+    assert.equal(res.status, 200);
+    assert.match(res.data, /fetch\('\/auth\/me'/);
+    assert.doesNotMatch(res.data, /if\s*\(\s*sessionStorage\.getItem\('token'\)\s*\)/);
+});
+
 // ─── /admin/seed ──────────────────────────────────────────────────────────────
 
 test('GET /admin/seed usa validação por cookie e não exige token em sessionStorage', async () => {

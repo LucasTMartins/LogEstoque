@@ -266,19 +266,18 @@
             window.location.replace(getReturnUrl());
         }
 
-        // If already authenticated, skip the login page
-        if (sessionStorage.getItem('token')) {
-            goToApp();
-        } else {
-            fetch('/auth/me', {
-                credentials: 'include',
-                headers: { Accept: 'application/json' }
-            }).then(function (res) {
-                if (res.ok) {
-                    goToApp();
-                }
-            }).catch(function () {});
-        }
+        // If already authenticated, skip the login page. Validate with the
+        // backend instead of trusting a possibly stale sessionStorage token.
+        fetch('/auth/me', {
+            credentials: 'include',
+            headers: { Accept: 'application/json' }
+        }).then(function (res) {
+            if (res.ok) {
+                goToApp();
+            } else {
+                sessionStorage.removeItem('token');
+            }
+        }).catch(function () {});
 
         function doLogin() {
             var username = document.getElementById('username').value.trim();
