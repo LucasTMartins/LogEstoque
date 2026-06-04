@@ -2,7 +2,7 @@
 -- Cria usuário admin com senha temporária "admin123" (bcrypt custo 10).
 -- IMPORTANTE: trocar a senha imediatamente após o primeiro login.
 
-INSERT INTO br_dev_imlucas_logestoque_auth_Users (
+INSERT INTO db_auth_Users (
     ID,
     username,
     "firstName",
@@ -27,7 +27,7 @@ INSERT INTO br_dev_imlucas_logestoque_auth_Users (
 ) ON CONFLICT (username) DO NOTHING;
 
 -- Cria permissão ADMIN se não existir
-INSERT INTO br_dev_imlucas_logestoque_auth_Permissions (
+INSERT INTO db_auth_Permissions (
     ID,
     name,
     description,
@@ -46,7 +46,7 @@ INSERT INTO br_dev_imlucas_logestoque_auth_Permissions (
 ) ON CONFLICT (name) DO NOTHING;
 
 -- Vincula admin à permissão ADMIN
-INSERT INTO br_dev_imlucas_logestoque_auth_UserPermissions (
+INSERT INTO db_auth_UserPermissions (
     ID,
     user_ID,
     permission_ID,
@@ -63,7 +63,7 @@ SELECT
     'seed',
     now(),
     'seed'
-FROM br_dev_imlucas_logestoque_auth_Users u
-JOIN br_dev_imlucas_logestoque_auth_Permissions p ON p.name = 'ADMIN'
+FROM db_auth_Users u
+JOIN db_auth_Permissions p ON p.name = 'ADMIN'
 WHERE u.username = 'admin'
 ON CONFLICT DO NOTHING;

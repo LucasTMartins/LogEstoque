@@ -18,13 +18,19 @@
     "start": "cds-serve",
     "dev": "cds watch",
     "watch-logestoque": "cds watch --open br.dev.imlucas.logestoque/index.html?sap-ui-xx-viewCache=false --livereload false",
-    "test": "node --test 'test/**/*.test.js'"
+    "test": "node --test 'test/**/*.test.js'",
+    "seed": "node --env-file=.env scripts/seed-dev.js"
   },
   "cds": {
     "requires": {
       "auth": {
         "kind": "custom",
         "impl": "./srv/auth/auth-middleware"
+      },
+      "db": {
+        "[production]": {
+          "kind": "postgres"
+        }
       }
     }
   },

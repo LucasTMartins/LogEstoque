@@ -17,5 +17,12 @@ until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -q; do
     sleep "$RETRY_INTERVAL"
 done
 
-echo "PostgreSQL disponível. Iniciando aplicação..."
-exec node node_modules/@sap/cds/bin/cds-serve
+echo "PostgreSQL disponível. Executando cds deploy..."
+node node_modules/@sap/cds/bin/deploy.js \
+  --host "$DB_HOST" \
+  --port "$DB_PORT" \
+  --database "$DB_NAME" \
+  --user "$DB_USER" \
+  --password "$DB_PASSWORD"
+echo "Iniciando aplicação..."
+exec node node_modules/@sap/cds/bin/serve.js

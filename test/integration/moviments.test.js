@@ -28,8 +28,8 @@ before(async () => {
     assert.equal(loginRes.status, 200, 'Login deve retornar 200');
     http.defaults.headers.common['Authorization'] = `Bearer ${loginRes.data.token}`;
 
-    // Login maria.aprovacao (APROVACAO) — usado para aprovar/rejeitar
-    const aprovRes = await http.post('/auth/login', { username: 'maria.aprovacao', password: 'pass-01' });
+    // Login m.aprovacao (APROVACAO) — usado para aprovar/rejeitar
+    const aprovRes = await http.post('/auth/login', { username: 'm.aprovacao', password: 'pass-01' });
     assert.equal(aprovRes.status, 200, 'Login de aprovação deve retornar 200');
     httpAprov = axios.create({
         baseURL:        url,

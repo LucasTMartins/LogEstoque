@@ -4,7 +4,8 @@ const path = require('path');
 const loginHandler   = require('./auth/login-handler');
 const authMiddleware = require('./auth/auth-middleware');
 
-const LOGIN_PAGE = path.resolve(__dirname, '../app/logestoque/webapp/login/index.html');
+const WEBAPP_DIR  = path.resolve(__dirname, '../app/logestoque/webapp');
+const LOGIN_PAGE  = path.join(WEBAPP_DIR, 'login/index.html');
 
 function requireAuth(req, res, next) {
     if (!req.user) return res.status(401).json({ error: 'Não autenticado' });
@@ -13,6 +14,9 @@ function requireAuth(req, res, next) {
 
 cds.on('bootstrap', (app) => {
     app.use(express.json());
+    // Serve o frontend pré-compilado no path que o manifest.json declara como ID do app.
+    // cds-plugin-ui5 faz isso automaticamente em dev; em produção precisamos registrar manualmente.
+    app.use('/br.dev.imlucas.logestoque', express.static(WEBAPP_DIR));
     app.post('/auth/login', loginHandler);
     app.post('/auth/logout', (_req, res) => {
         res.clearCookie('auth_token', {
@@ -42,6 +46,7 @@ cds.on('bootstrap', (app) => {
         }
     });
     app.get('/login', (_req, res) => res.sendFile(LOGIN_PAGE));
+    app.get('/', (_req, res) => res.redirect('/br.dev.imlucas.logestoque/index.html'));
 });
 
 module.exports = cds.server;
