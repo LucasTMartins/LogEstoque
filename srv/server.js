@@ -10,6 +10,10 @@ const WEBAPP_DIR      = path.resolve(__dirname, '../app/logestoque/webapp');
 const LOGIN_PAGE      = path.join(WEBAPP_DIR, 'login/index.html');
 const ADMIN_SEED_PAGE = path.join(__dirname, 'admin-seed.html');
 
+function isHttpsRequest(req) {
+    return req.secure || String(req.headers['x-forwarded-proto'] || '').split(',')[0] === 'https';
+}
+
 function requireAuth(req, res, next) {
     if (!req.user) return res.status(401).json({ error: 'Não autenticado' });
     next();
@@ -23,15 +27,17 @@ function requireAdmin(req, res, next) {
 }
 
 cds.on('bootstrap', (app) => {
+    app.set('trust proxy', 1);
     app.use(express.json());
     // Serve o frontend pré-compilado no path que o manifest.json declara como ID do app.
     // cds-plugin-ui5 faz isso automaticamente em dev; em produção precisamos registrar manualmente.
     app.use('/br.dev.imlucas.logestoque', express.static(WEBAPP_DIR));
     app.post('/auth/login', loginHandler);
-    app.post('/auth/logout', (_req, res) => {
+    app.post('/auth/logout', (req, res) => {
         res.clearCookie('auth_token', {
             httpOnly: true,
             sameSite: 'Lax',
+            secure:   isHttpsRequest(req),
             path:     '/',
         });
         res.status(204).end();

@@ -258,10 +258,26 @@
     <p class="login-footer">SAP Fiori · LogEstoque</p>
 
     <script>
+        function getReturnUrl() {
+            return new URLSearchParams(window.location.search).get('return') || '/br.dev.imlucas.logestoque/index.html';
+        }
+
+        function goToApp() {
+            window.location.replace(getReturnUrl());
+        }
+
         // If already authenticated, skip the login page
         if (sessionStorage.getItem('token')) {
-            var ret = new URLSearchParams(window.location.search).get('return');
-            window.location.replace(ret || '/br.dev.imlucas.logestoque/index.html');
+            goToApp();
+        } else {
+            fetch('/auth/me', {
+                credentials: 'include',
+                headers: { Accept: 'application/json' }
+            }).then(function (res) {
+                if (res.ok) {
+                    goToApp();
+                }
+            }).catch(function () {});
         }
 
         function doLogin() {
@@ -284,6 +300,7 @@
             fetch('/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({ username: username, password: password })
             })
             .then(function (res) {
@@ -293,9 +310,10 @@
                 });
             })
             .then(function (data) {
-                sessionStorage.setItem('token', data.token);
-                var returnUrl = new URLSearchParams(window.location.search).get('return');
-                window.location.replace(returnUrl || '/br.dev.imlucas.logestoque/index.html');
+                if (typeof data.token === 'string') {
+                    sessionStorage.setItem('token', data.token);
+                }
+                goToApp();
             })
             .catch(function (err) {
                 errorEl.textContent = err.message;

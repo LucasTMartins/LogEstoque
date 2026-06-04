@@ -61,10 +61,37 @@
     <a class="back" href="/">← Voltar para o sistema</a>
 </div>
 <script>
-    const token = sessionStorage.getItem('token');
-    if (!token) {
+    function redirectToLogin() {
+        sessionStorage.removeItem('token');
         window.location.replace('/login?return=' + encodeURIComponent('/admin/seed'));
     }
+
+    function showStatus(type, message) {
+        const status = document.getElementById('status');
+        status.className     = type;
+        status.textContent   = message;
+        status.style.display = 'block';
+    }
+
+    fetch('/auth/me', {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+    }).then((res) => {
+        if (!res.ok) {
+            redirectToLogin();
+            return null;
+        }
+        return res.json();
+    }).then((data) => {
+        if (!data) return;
+
+        const roles = data.user && Array.isArray(data.user.roles) ? data.user.roles : [];
+        if (!roles.includes('ADMIN')) {
+            const btn = document.getElementById('btn');
+            btn.disabled = true;
+            showStatus('error', 'Acesso negado: role ADMIN requerida.');
+        }
+    }).catch(redirectToLogin);
 
     document.getElementById('btn').addEventListener('click', async () => {
         if (!confirm('Confirmar reset completo dos dados?\nEsta ação apagará todos os registros atuais e não pode ser desfeita.')) return;
@@ -79,12 +106,17 @@
         try {
             const res  = await fetch('/admin/seed', {
                 method:  'POST',
-                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include',
             });
             const data = await res.json();
 
+            if (res.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
             status.className     = res.ok ? 'ok' : 'error';
-            status.textContent   = data.message;
+            status.textContent   = data.message || data.error || 'Falha ao executar seed.';
             status.style.display = 'block';
         } catch (err) {
             status.className     = 'error';
